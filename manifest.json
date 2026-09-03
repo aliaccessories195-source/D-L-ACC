@@ -1,0 +1,16 @@
+{
+  "name": "D&L ACC | مجوهرات وإكسسوارات",
+  "short_name": "D&L ACC",
+  "description": "متجر D&L ACC للمجوهرات والإكسسوارات",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8f4ee",
+  "theme_color": "#17110d",
+  "icons": [
+    {"src":"icon-192.svg","sizes":"192x192","type":"image/svg+xml","purpose":"any maskable"},
+    {"src":"icon-512.svg","sizes":"512x512","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#17110d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="D&L ACC">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%2317110d'/%3E%3Ctext x='50' y='61' text-anchor='middle' font-size='32' font-family='serif' fill='%23e6c88a'%3ED%26L%3C/text%3E%3C/svg%3E">
+    <title>D&L ACC | مجوهرات وإكسسوارات</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="light-theme">
+    <div class="floating-store-actions" aria-label="أدوات المتجر">
+        <a class="floating-store-btn" href="favorites.html" title="المفضلة"><i class="fas fa-heart"></i><span class="favorites-count" id="favorites-count">0</span></a>
+        <button class="floating-store-btn" id="floating-cart-btn" onclick="location.href='cart.html'" title="السلة"><i class="fas fa-shopping-bag"></i><span class="cart-count" id="cart-count">0</span></button>
+        <button class="floating-store-btn" id="theme-toggle" onclick="toggleTheme()" title="تغيير المظهر"><i class="fas fa-moon" id="theme-icon"></i></button>
+    </div>
+
+    <div class="announcement-bar"><span>✨ شحن مجاني للطلبات فوق 1000 ج.م</span><a href="https://wa.me/201147013334" target="_blank" rel="noopener">اطلبي أسرع عبر واتساب <i class="fab fa-whatsapp"></i></a></div>
+<section class="hero-section">
+        <div class="hero-overlay"></div>
+
+        <div class="floating-orb orb-one"></div>
+        <div class="floating-orb orb-two"></div>
+        <div class="hero-content animate__animated animate__zoomIn">
+            <span class="hero-badge">
+                <i class="fas fa-sparkles"></i>
+                تشكيلة مختارة بعناية • ٢٠٢٦
+            </span>
+
+            <h1>D&L ACC — تفاصيل تصنع حضورك</h1>
+
+            <p>
+                قطع ناعمة، فخمة، ومختارة بعناية لتكمّل إطلالتكِ بتفصيلة صغيرة تصنع فرقاً كبيراً.
+            </p>
+
+            <div class="hero-buttons">
+                <a href="#products" class="btn btn-primary">
+                    <i class="fas fa-shopping-cart"></i>
+                    تسوقي الآن
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="trust-strip" aria-label="مميزات D&L ACC">
+        <div class="trust-item"><span class="trust-icon"><i class="fas fa-gem"></i></span><div><strong>اختيارات راقية</strong><small>قطع منتقاة بعناية</small></div></div>
+        <div class="trust-item"><span class="trust-icon"><i class="fas fa-box-open"></i></span><div><strong>تغليف أنيق</strong><small>تفاصيل تليق بالهدية</small></div></div>
+        <div class="trust-item"><span class="trust-icon"><i class="fab fa-whatsapp"></i></span><div><strong>طلب سريع</strong><small>تأكيد الطلب عبر واتساب</small></div></div>
+        <div class="trust-item"><span class="trust-icon"><i class="fas fa-heart"></i></span><div><strong>اختاري على ذوقك</strong><small>مفضلة وQuick View</small></div></div>
+    </section>
+
+    <section class="editorial-section" aria-label="اختيارات D&L ACC">
+        <div class="editorial-copy">
+            <span class="eyebrow">THE D&L EDIT</span>
+            <h2>تفاصيل صغيرة، <em>حضور كبير.</em></h2>
+            <p>تشكيلة تجمع بين اللمعة الهادئة والتفاصيل التي تلفت النظر من أول لحظة. اختاري القطعة التي تشبهكِ.</p>
+            <a href="#products" class="editorial-link">اكتشفي التشكيلة <i class="fas fa-arrow-left"></i></a>
+        </div>
+        <div class="editorial-collage">
+            <div class="collage-card collage-main"><span>NEW</span></div>
+            <div class="collage-card collage-small one"></div>
+            <div class="collage-card collage-small two"></div>
+        </div>
+    </section>
+
+    <section class="featured-section">
+        <div class="section-title compact-title"><span class="eyebrow">CURATED FOR YOU</span><h2>اختياراتنا هذا الأسبوع</h2><p>قطع مميزة من نفس المنتجات الموجودة في قاعدة بياناتك — بدون تغيير أي بيانات.</p></div>
+        <div class="mini-products-grid" id="featured-products"></div>
+    </section>
+
+    <section class="categories-section">
+        <div class="section-title compact-title"><span class="eyebrow">SHOP BY MOOD</span><h2>اختاري الـMood</h2></div>
+        <div class="category-moods" id="category-moods"></div>
+    </section>
+
+    <section id="products" class="products-section">
+
+        <div class="section-title">
+            <span class="eyebrow">DISCOVER YOUR NEXT FAVORITE</span>
+            <h2 id="current-category-title">اختيارات D&L ACC</h2>
+            <p>ابحثي، فلّتي، ورتّبي التشكيلة بالطريقة اللي تناسب ذوقك.</p>
+        </div>
+
+        <div class="shop-toolbar">
+            <div class="search-box"><i class="fas fa-magnifying-glass"></i><input id="product-search" type="search" placeholder="ابحثي باسم القطعة أو القسم..." autocomplete="off"><button id="clear-search" type="button" aria-label="مسح البحث"><i class="fas fa-times"></i></button></div>
+            <div class="filter-row">
+                <select id="price-filter" aria-label="فلترة السعر"><option value="all">كل الأسعار</option><option value="under500">أقل من 500 ج.م</option><option value="500to1000">500 – 1000 ج.م</option><option value="over1000">أكثر من 1000 ج.م</option></select>
+                <select id="sort-products" aria-label="ترتيب المنتجات"><option value="newest">الأحدث</option><option value="price-low">السعر: الأقل أولاً</option><option value="price-high">السعر: الأعلى أولاً</option><option value="name">الاسم</option></select>
+            </div>
+        </div>
+        <div id="results-meta" class="results-meta"></div>
+
+        <div class="products-grid" id="products-container">
+            <p style="text-align: center; grid-column: 1/-1; opacity: 0.6;">
+                جاري تحميل المنتجات الأنيقة...
+            </p>
+        </div>
+
+    </section>
+
+    <div id="cart-sidebar" class="cart-sidebar">
+
+        <div class="cart-sidebar-header">
+            <h3>
+                <i class="fas fa-shopping-basket"></i>
+                حقيبة التسوق
+            </h3>
+
+            <button class="close-cart-btn" onclick="toggleCart()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div id="cart-items" class="cart-items-container">
+
+            <div class="empty-cart-msg">
+                <i class="fas fa-shopping-bag"
+                    style="font-size: 40px; margin-bottom: 15px; opacity: 0.3;">
+                </i>
+
+                <p>
+                    حقيبتكِ فارغة حالياً.. ابدئي بالتسوق الآن!
+                </p>
+            </div>
+
+        </div>
+
+        <div class="cart-sidebar-footer">
+            <div class="free-shipping-box"><div class="free-shipping-head"><span id="shipping-message">شحن مجاني فوق 1000 ج.م</span><strong id="shipping-remaining"></strong></div><div class="shipping-progress"><span id="shipping-progress-bar"></span></div></div>
+
+            <div class="total-price-wrapper">
+                <span>الإجمالي الكلي:</span>
+                <span id="total-price">0 ج.م</span>
+            </div>
+
+            <button class="checkout-whatsapp-btn" onclick="location.href='cart.html'">
+                <i class="fab fa-whatsapp"></i>
+                عرض الحقيبة وإتمام الطلب
+            </button>
+
+        </div>
+
+    </div>
+
+    <div id="cart-overlay" class="cart-overlay" onclick="toggleCart()"></div>
+
+    <div id="checkout-modal" class="checkout-modal" aria-hidden="true">
+        <div class="checkout-panel">
+            <button class="checkout-close" type="button" onclick="closeCheckout()" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+            <div class="checkout-head"><span class="eyebrow">SECURE YOUR ORDER</span><h2>بيانات الطلب</h2><p>اكتبي بياناتك، وبعد التأكيد نجهز الطلب ونفتح واتساب تلقائيًا.</p></div>
+            <form id="checkout-form" class="checkout-form">
+                <div class="checkout-grid">
+                    <label><span>الاسم</span><input id="checkout-name" required maxlength="80" placeholder="اسمك بالكامل"></label>
+                    <label><span>رقم الموبايل</span><input id="checkout-phone" required maxlength="20" inputmode="tel" placeholder="01xxxxxxxxx"></label>
+                </div>
+                <label><span>العنوان بالتفصيل</span><textarea id="checkout-address" required maxlength="300" rows="3" placeholder="المحافظة، المنطقة، الشارع، رقم العقار..."></textarea></label>
+                <div class="coupon-box"><label><span>كود خصم 🎟️</span><div class="coupon-inline"><input id="checkout-coupon" placeholder="مثال: HOSS20" maxlength="30"><button type="button" id="apply-coupon">تطبيق</button></div></label><div id="coupon-message" class="checkout-status"></div></div><div class="checkout-summary" id="checkout-summary"></div>
+                <div id="checkout-status" class="checkout-status" role="status"></div>
+                <button class="checkout-submit" type="submit"><i class="fab fa-whatsapp"></i> تأكيد الطلب وفتح واتساب</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="product-details" class="product-details" aria-hidden="true">
+        <div class="product-details-panel">
+            <button class="product-details-close" type="button" onclick="closeProductDetails()" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+            <div id="product-details-content"></div>
+        </div>
+    </div>
+
+    <div id="quick-view" class="quick-view" aria-hidden="true">
+        <div class="quick-view-panel">
+            <button class="quick-view-close" type="button" onclick="closeQuickView()" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+            <div id="quick-view-content"></div>
+        </div>
+    </div>
+
+    <section class="recent-section" id="recent-section" aria-label="شوهد مؤخراً"><div class="section-title compact-title"><span class="eyebrow">RECENTLY VIEWED</span><h2>شوهد مؤخراً 👀</h2></div><div class="mini-products-grid" id="recent-products"></div></section>
+
+    <section class="recommendations-section" aria-label="اقتراحات لك"><div class="section-title compact-title"><span class="eyebrow">YOU MAY ALSO LIKE</span><h2>ممكن يعجبك كمان</h2></div><div class="mini-products-grid" id="recommendation-products"></div></section>
+
+    <section class="social-showcase" aria-label="D&L mood">
+        <div class="social-heading"><span class="eyebrow">D&L MOOD</span><h2>ستايلك يبدأ من التفاصيل</h2><p>لقطات مستوحاة من قطعكِ المفضلة.</p></div>
+        <div class="social-grid" id="social-grid"></div>
+    </section>
+
+    <a class="floating-whatsapp" href="https://wa.me/201147013334" target="_blank" rel="noopener" aria-label="تواصلي عبر واتساب"><i class="fab fa-whatsapp"></i><span>اسألي عن أي قطعة</span></a>
+
+    <button class="floating-developer" type="button" onclick="openDeveloperCard()" aria-label="مبرمج الموقع">
+        <i class="fas fa-code"></i><span>مبرمج الموقع</span>
+    </button>
+
+    <div id="developer-card" class="developer-overlay" aria-hidden="true">
+        <div class="developer-card" role="dialog" aria-modal="true" aria-labelledby="developer-title">
+            <button class="developer-close" type="button" onclick="closeDeveloperCard()" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+            <div class="developer-icon"><i class="fas fa-laptop-code"></i></div>
+            <span class="eyebrow">SITE DEVELOPER</span>
+            <h2 id="developer-title">مبرمج الموقع</h2>
+            <h3>حسين محمد</h3>
+            <p>مبرمج وجرافيك ديزاينر، وهو من أنشأ هذا الموقع وصمّم لوجو الموقع، ولديه خبرة في <strong>Adobe Illustrator</strong> و<strong>Adobe Photoshop</strong>، كما حصل على كورس تدريبي مع شركة <strong>Pinnacle Misr</strong>.</p>
+            <a class="developer-portfolio" href="https://husaynmohamed4-star.github.io/hossayn/" target="_blank" rel="noopener"><i class="fas fa-globe"></i><span>زيارة موقعي الشخصي</span><i class="fas fa-arrow-left"></i></a>
+            <a class="developer-whatsapp" href="https://wa.me/201507280647" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i><span>تواصل معه على واتساب</span></a>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div><strong>D&L ACC</strong><span>JEWELRY & ACCESSORIES</span></div>
+        <p>مصمم بتفاصيل فخمة وبسيطة — وكل قطعة لها حضورها.</p>
+        <a href="#products">تسوقي الآن <i class="fas fa-arrow-left"></i></a>
+    </footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <button id="back-to-top" class="back-to-top" type="button" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="العودة للأعلى"><i class="fas fa-arrow-up"></i></button>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+
+<script src="register-sw.js" defer></script>
+</body>
+</html>

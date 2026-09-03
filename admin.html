@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#17110d">
+<title>D&L ACC | لوحة الإدارة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{
+ --bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#64748b;--line:#e2e8f0;
+ --primary:#4f46e5;--primary2:#4338ca;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;
+ --sidebar:255px;--shadow:0 10px 30px rgba(15,23,42,.07)
+}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Cairo,Arial,sans-serif;color:var(--text);background:var(--bg)}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+.hidden{display:none!important}
+#loginCard{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#eef2ff,#f8fafc)}
+.login-box{width:min(430px,100%);background:#fff;border:1px solid var(--line);border-radius:24px;padding:32px;box-shadow:0 25px 70px rgba(15,23,42,.12)}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:24px}.brand-icon{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,var(--primary),#06b6d4);color:#fff;display:grid;place-items:center;font-size:22px}.brand h1{font-size:21px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}
+label{display:block;font-weight:700;font-size:13px;margin:14px 0 7px}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:#fff;color:var(--text);outline:none}input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.primary-btn,.manage-btn{border:0;border-radius:12px;background:var(--primary);color:#fff;padding:11px 16px;font-weight:700}.primary-btn:hover,.manage-btn:hover{background:var(--primary2)}
+.secondary{background:#fff!important;color:var(--text)!important;border:1px solid var(--line)!important}.danger{background:#fff0f0!important;color:var(--danger)!important;border:1px solid #fecaca!important}
+.status{min-height:22px;margin-top:10px;font-size:13px}.status.ok{color:#059669}.status.err{color:#dc2626}
+.app{display:flex;min-height:100vh}
+.sidebar{position:fixed;right:0;top:0;width:var(--sidebar);height:100vh;background:#fff;border-left:1px solid var(--line);box-shadow:var(--shadow);z-index:100;display:flex;flex-direction:column;transition:.25s}
+.sidebar.collapsed{width:78px}.sidebar.collapsed .logo-text,.sidebar.collapsed .nav-text,.sidebar.collapsed .badge-count,.sidebar.collapsed .user-info,.sidebar.collapsed .nav-category{display:none}
+.sidebar.collapsed .nav-item{justify-content:center;padding-inline:0}.sidebar-header{height:76px;padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.logo-box{display:flex;align-items:center;gap:10px}.logo-icon{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,var(--primary),#06b6d4);color:#fff;display:grid;place-items:center}.logo-text{font-weight:800;font-size:18px}
+.toggle-btn{width:34px;height:34px;border:0;border-radius:50%;background:#eef2ff;color:var(--primary);display:grid;place-items:center}
+.nav-menu{padding:16px 10px;overflow:auto;flex:1}.nav-category{font-size:11px;color:var(--muted);font-weight:800;padding:12px 14px 6px}
+.nav-item{width:100%;display:flex;align-items:center;gap:11px;border:0;background:transparent;color:#64748b;padding:12px 14px;border-radius:12px;margin:3px 0;text-align:right;font-weight:700;font-size:14px}
+.nav-item i{width:22px;text-align:center;font-size:16px}.nav-item:hover{background:#f1f5f9;color:var(--primary)}.nav-item.active{background:var(--primary);color:#fff;box-shadow:0 8px 20px rgba(79,70,229,.22)}
+.badge-count{margin-right:auto;min-width:25px;text-align:center;padding:2px 7px;border-radius:20px;background:#eef2ff;color:var(--primary);font-size:11px}
+.sidebar-footer{padding:15px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center}.avatar{width:40px;height:40px;border-radius:50%;background:#eef2ff;display:grid;place-items:center;color:var(--primary)}.user-info h4{font-size:13px;margin:0}.user-info p{font-size:11px;color:var(--muted);margin:2px 0}
+.main{margin-right:var(--sidebar);min-width:0;flex:1;transition:.25s}.main.expanded{margin-right:78px}
+.topbar{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:80}.page-title{font-size:20px;font-weight:800}.top-actions{display:flex;align-items:center;gap:10px}.logout{border:1px solid #fecaca;background:#fff;color:var(--danger);border-radius:11px;padding:9px 12px;font-weight:700}
+.content{padding:26px;max-width:1500px;margin:auto}.panel{display:none}.panel.active{display:block;animation:in .2s ease}@keyframes in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.panel-title{margin:0 0 5px;font-size:24px}.panel-desc{margin:0 0 18px;color:var(--muted);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:20px}.stat{background:#fff;border:1px solid var(--line);border-radius:17px;padding:18px;box-shadow:var(--shadow)}.stat small{color:var(--muted);display:block;font-size:12px}.stat strong{display:block;font-size:24px;margin-top:5px}.stat-icon{float:left;width:42px;height:42px;border-radius:13px;background:#eef2ff;color:var(--primary);display:grid;place-items:center}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:20px;margin-bottom:18px}.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.card-head h3{margin:0;font-size:17px}.muted{color:var(--muted);font-size:12px}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.form-grid .full{grid-column:1/-1}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}.product-card{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#fff}.product-card img{width:100%;height:175px;object-fit:cover;background:#f1f5f9}.product-body{padding:13px}.product-body h3{font-size:15px;margin:0 0 5px}.product-body p{margin:3px 0;color:var(--muted);font-size:12px}.product-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.product-actions button,.edit-product,.delete-product{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:9px 12px;border-radius:12px;font-weight:800;font-size:12px;transition:transform .18s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease}.edit-product{background:linear-gradient(135deg,#eef2ff,#e0e7ff);color:#4338ca;border:1px solid #c7d2fe;box-shadow:0 5px 14px rgba(79,70,229,.10)}.edit-product:hover{transform:translateY(-2px);background:linear-gradient(135deg,#e0e7ff,#c7d2fe);box-shadow:0 9px 20px rgba(79,70,229,.16)}.delete-product{background:linear-gradient(135deg,#fff7f7,#fee2e2);color:#dc2626;border:1px solid #fecaca;box-shadow:0 5px 14px rgba(239,68,68,.07)}.delete-product:hover{transform:translateY(-2px);background:linear-gradient(135deg,#fee2e2,#fecaca);box-shadow:0 9px 20px rgba(239,68,68,.13)}.edit-product:active,.delete-product:active{transform:scale(.98)}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}.orders-table{width:100%;border-collapse:collapse;min-width:900px}.orders-table th,.orders-table td{padding:12px;border-bottom:1px solid var(--line);text-align:right;font-size:12px}.orders-table th{background:#f8fafc;color:#475569}.order-status-select{width:125px;padding:7px;border-radius:9px}
+.tools{display:flex;gap:9px;margin-bottom:14px}.tools>*{flex:1}.tools button{flex:0 0 auto}
+.list{display:grid;gap:10px}.coupon-row,.review-row,.inventory-item,.offer-row,.top-product{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px;border:1px solid var(--line);border-radius:13px;background:#fff}.coupon-code{display:inline-block;background:#eef2ff;color:var(--primary);font-weight:800;padding:5px 9px;border-radius:8px;direction:ltr}.row-actions,.review-actions,.inventory-actions{display:flex;gap:7px;align-items:center}.row-actions button,.review-actions button{border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 10px}.stock-pill{display:inline-block;margin-top:6px;font-size:11px;padding:4px 8px;border-radius:20px;background:#ecfdf5;color:#059669}.stock-pill.low{background:#fffbeb;color:#d97706}.stock-pill.out{background:#fef2f2;color:#dc2626}
+.inventory-item>div:first-child{flex:1}.inventory-actions input{width:100px}.offer-row{align-items:flex-start}.review-comment{margin-top:5px;color:#475569;font-size:12px;line-height:1.7}.review-stars{color:#f59e0b;margin-top:3px}.sales-chart{display:flex;align-items:flex-end;gap:12px;min-height:190px;padding:20px}.sales-bar{flex:1;text-align:center;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px}.sales-bar i{display:block;width:100%;max-width:55px;background:linear-gradient(180deg,#6366f1,#a5b4fc);border-radius:8px 8px 2px 2px}.sales-bar small{color:var(--muted)}
+.order-detail-modal{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:500;display:grid;place-items:center;padding:18px}.order-detail-box{width:min(700px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:20px;padding:22px}.modal-head{display:flex;justify-content:space-between;align-items:center}.modal-close{border:0;background:#f1f5f9;border-radius:50%;width:38px;height:38px;font-size:22px}.order-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}.detail-box{border:1px solid var(--line);border-radius:12px;padding:11px}.detail-box small{display:block;color:var(--muted);margin-bottom:4px}.detail-items{display:grid;gap:8px}.detail-item{display:flex;justify-content:space-between;padding:10px;border-radius:10px;background:#f8fafc}.v11-invoice-btn{border:0;border-radius:10px;background:var(--primary);color:#fff;padding:9px 12px;margin-top:14px}
+.edit-modal{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:510;display:grid;place-items:center;padding:18px}.edit-modal-box{width:min(650px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:20px;padding:22px}
+@media(max-width:1000px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:760px){.sidebar{transform:translateX(100%);width:280px}.sidebar.mobile-open{transform:none}.main,.main.expanded{margin-right:0}.topbar{padding:0 15px}.content{padding:15px}.form-grid{grid-template-columns:1fr}.tools{flex-wrap:wrap}.tools>*{min-width:180px}.stats{grid-template-columns:1fr 1fr}.desktop-toggle{display:none}}
+@media(min-width:761px){.mobile-menu{display:none!important}}
+
+/* ===== Premium Dark Mode ===== */
+.theme-toggle{min-height:42px;padding:9px 14px;border:1px solid #dbe3ee;border-radius:13px;background:#fff;color:#334155;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:12px;box-shadow:0 5px 14px rgba(15,23,42,.06);transition:.18s ease}.theme-toggle:hover{transform:translateY(-2px);border-color:#c7d2fe;color:var(--primary);box-shadow:0 9px 20px rgba(15,23,42,.1)}
+html.dark{color-scheme:dark}
+html.dark body{--bg:#0b1020;--card:#121a2b;--text:#f8fafc;--muted:#94a3b8;--line:#26334a;--primary:#6366f1;--primary2:#818cf8;--shadow:0 16px 40px rgba(0,0,0,.28);background:radial-gradient(circle at 12% 8%,rgba(99,102,241,.12),transparent 28%),linear-gradient(135deg,#080d18,#0d1424 55%,#080c15);color:var(--text)}
+html.dark #loginCard{background:linear-gradient(135deg,#0b1020,#111827)}
+html.dark .login-box,html.dark .sidebar,html.dark .card,html.dark .product-card,html.dark .coupon-row,html.dark .review-row,html.dark .inventory-item,html.dark .offer-row,html.dark .top-product,html.dark .order-detail-box,html.dark .edit-modal-box{background:#121a2b;color:var(--text);border-color:var(--line)}
+html.dark input,html.dark select,html.dark textarea{background:#0c1424;color:var(--text);border-color:#2b3952}
+html.dark .product-card img{background:#0c1424}
+html.dark .product-actions .edit-product{background:linear-gradient(135deg,#1b2450,#202a63);color:#a5b4fc;border-color:#3b4b91}
+html.dark .product-actions .delete-product{background:linear-gradient(135deg,#3a1d26,#4a2029);color:#fca5a5;border-color:#7f303a}
+html.dark .secondary{background:#172235!important;color:#cbd5e1!important;border-color:#334155!important}
+html.dark .secondary:hover{background:#1e293b!important;color:#a5b4fc!important}
+html.dark .toggle-btn{background:linear-gradient(135deg,#17213a,#111a2d)!important;color:#c7d2fe;border-color:#334155!important}
+html.dark .theme-toggle{background:#172235;color:#e2e8f0;border-color:#334155}
+html.dark .theme-toggle:hover{background:#1e293b;color:#a5b4fc}
+html.dark .logout{background:#241720!important;color:#fca5a5!important;border-color:#6b3038!important}
+html.dark .table-wrap,html.dark .orders-table-wrap{background:#0d1525;border-color:var(--line)}
+html.dark .orders-table th{background:#172235;color:#cbd5e1}
+html.dark .detail-item{background:#172235}
+html.dark .modal-close{background:#1e293b;color:#e2e8f0}
+html.dark .nav-item.active{box-shadow:0 10px 25px rgba(99,102,241,.3)!important}
+@media(max-width:560px){.theme-toggle span{display:none}.theme-toggle{width:42px;padding:0}}
+
+/* ===== Dark mode contrast + numbers fix ===== */
+html.dark .topbar,
+html.dark .stat,
+html.dark .card,
+html.dark .product-card,
+html.dark .coupon-row,
+html.dark .review-row,
+html.dark .inventory-item,
+html.dark .offer-row,
+html.dark .top-product,
+html.dark .order-detail-box,
+html.dark .login-box,
+html.dark .sidebar{background:#121a2b!important;color:#f8fafc!important;border-color:#26334a!important}
+html.dark .panel-title,
+html.dark .page-title,
+html.dark .stat strong,
+html.dark .card-head h3,
+html.dark .product-body h3,
+html.dark .stat small,
+html.dark label,
+html.dark .muted,
+html.dark .product-body p,
+html.dark .review-comment,
+html.dark .user-info h4{color:#f8fafc!important}
+html.dark .stat small,
+html.dark .panel-desc,
+html.dark .brand p,
+html.dark .nav-category,
+html.dark .product-body p,
+html.dark .muted,
+html.dark .review-comment,
+html.dark .sales-bar small,
+html.dark .user-info p{color:#94a3b8!important}
+html.dark .nav-item{color:#a8b5ca!important}
+html.dark .nav-item:hover{background:#1b2940!important;color:#a5b4fc!important}
+html.dark .badge-count{background:#202d46!important;color:#c7d2fe!important}
+html.dark .stat-icon{background:#202b49!important;color:#a5b4fc!important}
+html.dark .product-card img{background:#0c1424!important}
+html.dark .product-body,
+html.dark .product-actions{color:#f8fafc!important}
+html.dark .table-wrap{background:#0d1525!important;border-color:#26334a!important}
+html.dark .orders-table th{background:#172235!important;color:#cbd5e1!important}
+html.dark .orders-table td{color:#e2e8f0!important;border-color:#26334a!important}
+html.dark .coupon-code{background:#202b49!important;color:#a5b4fc!important}
+html.dark .row-actions button,
+html.dark .review-actions button{background:#172235!important;color:#e2e8f0!important;border-color:#334155!important}
+html.dark .stock-pill{background:#12352d!important;color:#6ee7b7!important}
+html.dark .stock-pill.low{background:#3b2d10!important;color:#fbbf24!important}
+html.dark .stock-pill.out{background:#3b1e26!important;color:#fca5a5!important}
+html.dark .sales-bar b{color:#f8fafc!important}
+html.dark .sales-bar i{background:linear-gradient(180deg,#818cf8,#6366f1)!important}
+html.dark input,html.dark select,html.dark textarea{background:#0c1424!important;color:#f8fafc!important}
+html.dark input::placeholder,html.dark textarea::placeholder{color:#64748b!important}
+html.dark .modal-close{background:#1e293b!important;color:#e2e8f0!important}
+html.dark .v11-invoice-btn{background:#6366f1!important;color:#fff!important}
+
+
+/* ===== Elegant buttons refresh ===== */
+:root{
+  --btn-radius:14px;
+  --btn-shadow:0 7px 18px rgba(79,70,229,.16);
+}
+.primary-btn,.manage-btn{
+  position:relative;
+  isolation:isolate;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:44px;
+  padding:10px 18px;
+  border:1px solid rgba(79,70,229,.18);
+  border-radius:var(--btn-radius);
+  background:linear-gradient(135deg,var(--primary),#635bff);
+  color:#fff;
+  font-weight:800;
+  font-size:13px;
+  box-shadow:var(--btn-shadow);
+  transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;
+}
+.primary-btn::before,.manage-btn::before{
+  content:"";
+  position:absolute;
+  inset:1px;
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,255,255,.14),transparent 55%);
+  pointer-events:none;
+  z-index:-1;
+}
+.primary-btn:hover,.manage-btn:hover{
+  background:linear-gradient(135deg,#4338ca,#554cff);
+  transform:translateY(-2px);
+  box-shadow:0 11px 25px rgba(79,70,229,.24);
+}
+.primary-btn:active,.manage-btn:active{
+  transform:translateY(0) scale(.98);
+}
+.secondary{
+  min-height:44px;
+  padding:10px 17px!important;
+  border-radius:var(--btn-radius)!important;
+  background:#fff!important;
+  color:#334155!important;
+  border:1px solid #dbe3ee!important;
+  box-shadow:0 5px 14px rgba(15,23,42,.06);
+  font-weight:800!important;
+  transition:.18s ease;
+}
+.secondary:hover{
+  background:#f8fafc!important;
+  border-color:#c7d2fe!important;
+  color:var(--primary)!important;
+  transform:translateY(-2px);
+  box-shadow:0 9px 20px rgba(15,23,42,.09);
+}
+.danger{
+  min-height:44px;
+  padding:10px 17px!important;
+  border-radius:var(--btn-radius)!important;
+  background:#fff7f7!important;
+  color:#dc2626!important;
+  border:1px solid #fecaca!important;
+  box-shadow:0 5px 14px rgba(239,68,68,.06);
+  font-weight:800!important;
+  transition:.18s ease;
+}
+.danger:hover{
+  background:#feecec!important;
+  border-color:#fca5a5!important;
+  transform:translateY(-2px);
+}
+.logout{
+  min-height:42px;
+  padding:9px 15px!important;
+  border-radius:13px!important;
+  font-weight:800!important;
+  transition:.18s ease;
+}
+.logout:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(239,68,68,.10)}
+.toggle-btn{
+  border:1px solid #e0e7ff!important;
+  background:linear-gradient(135deg,#eef2ff,#f8faff)!important;
+  box-shadow:0 5px 13px rgba(79,70,229,.08);
+  transition:.18s ease;
+}
+.toggle-btn:hover{
+  background:#e9edff!important;
+  transform:translateY(-1px);
+  box-shadow:0 8px 17px rgba(79,70,229,.14);
+}
+.nav-item{
+  position:relative;
+  overflow:hidden;
+  transition:background .18s ease,color .18s ease,transform .18s ease,box-shadow .18s ease;
+}
+.nav-item:hover{transform:translateX(-2px)}
+.nav-item.active{
+  background:linear-gradient(135deg,var(--primary),#635bff)!important;
+  box-shadow:0 9px 22px rgba(79,70,229,.23)!important;
+}
+.nav-item.active::after{
+  content:"";
+  position:absolute;
+  right:0;
+  top:9px;
+  bottom:9px;
+  width:3px;
+  border-radius:4px 0 0 4px;
+  background:rgba(255,255,255,.9);
+}
+.top-actions{gap:9px}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.actions button{margin:0}
+button:focus-visible{
+  outline:3px solid rgba(99,91,255,.22);
+  outline-offset:2px;
+}
+@media(max-width:560px){
+  .primary-btn,.manage-btn,.secondary,.danger{min-height:42px;padding:9px 14px!important}
+}
+
+
+.whatsapp-message-setting textarea{width:100%;min-height:180px;resize:vertical;line-height:1.8;font-family:inherit;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:rgba(0,0,0,.18);color:var(--text);outline:none;transition:.2s}.whatsapp-message-setting textarea:focus{border-color:rgba(99,102,241,.65);box-shadow:0 0 0 4px rgba(99,102,241,.10)}.setting-hint{display:block;margin-top:8px;color:var(--muted);font-size:12px;line-height:1.8}
+</style>
+</head>
+<body>
+
+<section id="loginCard">
+  <div class="login-box">
+    <div class="brand"><div class="brand-icon"><i class="fa-solid fa-bolt"></i></div><div><h1>D&L ACC</h1><p>تسجيل دخول لوحة الإدارة</p></div></div>
+    <label for="email">البريد الإلكتروني</label><input id="email" type="email" autocomplete="username" placeholder="admin@example.com">
+    <label for="password">كلمة المرور</label><input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
+    <button id="loginBtn" class="primary-btn" style="width:100%;margin-top:16px">دخول لوحة الإدارة</button>
+    <div id="loginStatus" class="status"></div>
+  </div>
+</section>
+
+<section id="adminCard" class="app hidden">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-box"><div class="logo-icon"><i class="fa-solid fa-bolt"></i></div><span class="logo-text">D&L ACC</span></div>
+      <button class="toggle-btn desktop-toggle" id="sidebarToggle" title="تصغير القائمة"><i class="fa-solid fa-chevron-right" id="toggleIcon"></i></button>
+    </div>
+    <nav class="nav-menu">
+      <div class="nav-category">الرئيسية</div>
+      <button class="nav-item admin-tab active" data-tab="dashboardPanel"><i class="fa-solid fa-chart-pie"></i><span class="nav-text">الرئيسية</span></button>
+      <button class="nav-item admin-tab" data-tab="productsPanel"><i class="fa-solid fa-box"></i><span class="nav-text">المنتجات</span><span class="badge-count" id="sideProducts">0</span></button>
+      <button class="nav-item admin-tab" data-tab="inventoryPanel"><i class="fa-solid fa-warehouse"></i><span class="nav-text">المخزون</span></button>
+      <button class="nav-item admin-tab" data-tab="ordersPanel"><i class="fa-solid fa-cart-shopping"></i><span class="nav-text">الطلبات</span><span class="badge-count" id="sideOrders">0</span></button>
+      <div class="nav-category">التسويق</div>
+      <button class="nav-item admin-tab" data-tab="discountsPanel"><i class="fa-solid fa-tags"></i><span class="nav-text">خصومات المنتجات</span></button>
+      <button class="nav-item admin-tab" data-tab="offersPanel"><i class="fa-solid fa-bolt"></i><span class="nav-text">العروض الموسمية</span></button>
+      <button class="nav-item admin-tab" data-tab="couponsPanel"><i class="fa-solid fa-ticket"></i><span class="nav-text">أكواد الخصم</span><span class="badge-count" id="sideCoupons">0</span></button>
+      <div class="nav-category">المتابعة</div>
+      <button class="nav-item admin-tab" data-tab="reviewsPanel"><i class="fa-solid fa-star"></i><span class="nav-text">التقييمات</span><span class="badge-count" id="sideReviews">0</span></button>
+      <button class="nav-item admin-tab" data-tab="invoicesPanel"><i class="fa-solid fa-file-invoice"></i><span class="nav-text">الفواتير</span></button>
+      <button class="nav-item admin-tab" data-tab="analyticsPanel"><i class="fa-solid fa-chart-line"></i><span class="nav-text">التقارير والإحصائيات</span></button>
+      <div class="nav-category">النظام</div>
+      <button class="nav-item admin-tab" data-tab="settingsPanel"><i class="fa-solid fa-gear"></i><span class="nav-text">إعدادات الموقع</span></button>
+    </nav>
+    <div class="sidebar-footer"><div class="avatar"><i class="fa-solid fa-user-shield"></i></div><div class="user-info"><h4>مدير النظام</h4><p>حسين محمد</p></div></div>
+  </aside>
+
+  <main class="main" id="mainWrapper">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:10px"><button class="toggle-btn mobile-menu" id="mobileMenuBtn"><i class="fa-solid fa-bars"></i></button><div class="page-title" id="pageTitle">الرئيسية</div></div>
+      <div class="top-actions"><button class="theme-toggle" id="themeToggle" type="button" title="تبديل الوضع"><i class="fa-solid fa-moon"></i><span>الوضع الداكن</span></button><button class="logout" id="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> خروج</button></div>
+    </header>
+
+    <div class="content">
+      <section id="dashboardPanel" class="panel admin-panel active">
+        <h2 class="panel-title">لوحة التحكم 📊</h2><p class="panel-desc">الأرقام هنا تُقرأ من قاعدة بيانات Supabase مباشرة، بدون بيانات تجريبية.</p>
+        <div class="stats">
+          <div class="stat"><div class="stat-icon"><i class="fa-solid fa-money-bill-wave"></i></div><small>إجمالي المبيعات</small><strong id="v11Sales">0 ج.م</strong></div>
+          <div class="stat"><div class="stat-icon"><i class="fa-solid fa-cart-shopping"></i></div><small>إجمالي الطلبات</small><strong id="v11Orders">0</strong></div>
+          <div class="stat"><div class="stat-icon"><i class="fa-solid fa-users"></i></div><small>العملاء</small><strong id="v11Customers">0</strong></div>
+          <div class="stat"><div class="stat-icon"><i class="fa-solid fa-ticket"></i></div><small>الأكواد النشطة</small><strong id="v11Coupons">0</strong></div>
+        </div>
+        <div style="display:none" aria-hidden="true"><span id="statOrders">0</span><span id="statSales">0</span></div>
+        <div class="stats">
+          <div class="stat"><small>المنتجات</small><strong id="statProducts">0</strong></div>
+          <div class="stat"><small>طلبات جديدة</small><strong id="statNewOrders">0</strong></div>
+          <div class="stat"><small>مخزون منخفض</small><strong id="v11LowStock">0</strong></div>
+          <div class="stat"><small>تقييمات تحتاج مراجعة</small><strong id="v11PendingReviews">0</strong></div>
+        </div>
+        <div class="card"><div class="card-head"><h3>المبيعات آخر 7 أيام</h3><button class="manage-btn" id="refreshDashboardBtn">تحديث</button></div><div class="sales-chart" id="salesChart"></div></div>
+        <div class="card"><div class="card-head"><h3>أكثر المنتجات مبيعًا</h3></div><div id="topProductsList" class="list"></div></div>
+      </section>
+
+      <section id="productsPanel" class="panel admin-panel">
+        <h2 class="panel-title">المنتجات 🛍️</h2><p class="panel-desc">إضافة وتعديل وحذف المنتجات من Supabase.</p>
+        <div class="card">
+          <div class="card-head"><h3>إضافة منتج جديد</h3></div>
+          <div class="form-grid">
+            <div><label>اسم المنتج</label><input id="title" placeholder="اسم المنتج"></div>
+            <div><label>السعر الأصلي</label><input id="price" type="number" min="0" step="0.01" placeholder="0"></div>
+            <div><label>التصنيف</label><input id="category" placeholder="سلسله"></div>
+            <div><label>الكمية في المخزون</label><input id="stock" type="number" min="0" step="1" value="0"></div>
+            <div class="full"><label>صورة المنتج</label><input id="imageFile" type="file" accept="image/*"><img id="preview" style="display:none;max-width:180px;max-height:150px;border-radius:12px;margin-top:10px;object-fit:cover"></div>
+          </div>
+          <div class="actions"><button class="manage-btn" id="addBtn">إضافة المنتج</button><button class="manage-btn secondary" id="loadProductsBtn">تحديث المنتجات</button></div><div id="addStatus" class="status"></div>
+        </div>
+        <div class="card"><div class="card-head"><h3>المنتجات الحالية</h3></div><div id="productsList" class="products-grid"></div><div id="productsStatus" class="status"></div></div>
+      </section>
+
+      <section id="discountsPanel" class="panel admin-panel">
+        <h2 class="panel-title">خصومات المنتجات 🔥</h2><p class="panel-desc">تفعيل خصم مباشر على أي منتج.</p>
+        <div class="card">
+          <div class="form-grid">
+            <div><label>المنتج</label><select id="discountProduct"><option value="">اختاري منتجًا</option></select></div>
+            <div><label>نوع الخصم</label><select id="discountType"><option value="percent">% نسبة</option><option value="fixed">ج.م قيمة</option></select></div>
+            <div><label>قيمة الخصم</label><input id="discountValue" type="number" min="0" step="0.01" placeholder="20"></div>
+            <div class="full"><div id="discountPreview" class="muted" style="padding:12px;background:#f8fafc;border-radius:12px">اختاري منتجًا لعرض السعر بعد الخصم</div></div>
+          </div>
+          <div class="actions"><button class="manage-btn" id="applyDiscountBtn">تفعيل الخصم 🔥</button><button class="manage-btn secondary" id="removeDiscountBtn">إزالة الخصم</button></div><div id="discountStatus" class="status"></div>
+        </div>
+      </section>
+
+      <section id="inventoryPanel" class="panel admin-panel">
+        <h2 class="panel-title">المخزون 📦</h2><p class="panel-desc">تعديل الكميات مباشرة في Supabase.</p>
+        <div class="tools"><input id="inventorySearch" placeholder="ابحث باسم المنتج أو القسم"><select id="inventoryFilter"><option value="all">كل المنتجات</option><option value="low">مخزون منخفض</option><option value="out">نفد المخزون</option></select><button class="manage-btn" id="refreshInventoryBtn">تحديث</button></div>
+        <div id="inventoryGrid" class="list"></div><div id="inventoryStatus" class="status"></div>
+      </section>
+
+      <section id="offersPanel" class="panel admin-panel">
+        <h2 class="panel-title">العروض الموسمية ⚡</h2><p class="panel-desc">عرض لفترة محددة مع نسبة أو قيمة خصم.</p>
+        <div class="card">
+          <div class="form-grid">
+            <div><label>المنتج</label><select id="offerProduct"><option value="">اختاري منتجًا</option></select></div>
+            <div><label>اسم العرض</label><input id="offerName" placeholder="عرض الصيف"></div>
+            <div><label>النوع</label><select id="offerType"><option value="percent">نسبة %</option><option value="fixed">قيمة ج.م</option></select></div>
+            <div><label>القيمة</label><input id="offerValue" type="number" min="0" step="0.01" placeholder="20"></div>
+            <div><label>يبدأ</label><input id="offerStarts" type="datetime-local"></div>
+            <div><label>ينتهي</label><input id="offerEnds" type="datetime-local"></div>
+            <div class="full"><div id="offerPreview" class="muted" style="padding:12px;background:#f8fafc;border-radius:12px">اختاري منتجًا</div></div>
+          </div>
+          <div class="actions"><button class="manage-btn" id="saveOfferBtn">حفظ العرض ⚡</button><button class="manage-btn secondary" id="removeOfferBtn">إزالة العرض</button></div><div id="offerStatus" class="status"></div>
+        </div>
+        <div class="card"><div class="card-head"><h3>العروض الحالية</h3></div><div id="offersList" class="list"></div></div>
+      </section>
+
+      <section id="couponsPanel" class="panel admin-panel">
+        <h2 class="panel-title">أكواد الخصم 🎟️</h2><p class="panel-desc">لا توجد أكواد تجريبية. القائمة تُقرأ من Supabase فقط.</p>
+        <div class="card">
+          <div class="form-grid">
+            <div><label>الكود</label><input id="couponCode" placeholder="SAVE20"></div>
+            <div><label>نسبة الخصم %</label><input id="couponPercent" type="number" min="1" max="100" placeholder="20"></div>
+            <div><label>الحد الأدنى للطلب</label><input id="couponMin" type="number" min="0" placeholder="500"></div>
+            <div><label>عدد الاستخدامات</label><input id="couponLimit" type="number" min="0" placeholder="100"></div>
+            <div><label>تاريخ الانتهاء</label><input id="couponExpires" type="datetime-local"></div>
+          </div>
+          <div class="actions"><button class="manage-btn" id="saveCouponBtn">إنشاء الكود</button><button class="manage-btn secondary" id="clearCouponBtn">مسح</button></div><div id="couponStatus" class="status"></div>
+        </div>
+        <div class="card"><div class="card-head"><h3>الأكواد الحالية</h3></div><div id="couponsList" class="list"></div></div>
+      </section>
+
+      <section id="ordersPanel" class="panel admin-panel">
+        <h2 class="panel-title">الطلبات 📦</h2><p class="panel-desc">الطلبات الحقيقية المحفوظة في Supabase.</p>
+        <div id="ordersStatus" class="status"></div>
+        <div class="tools"><input id="orderSearch" placeholder="ابحث برقم الطلب أو اسم العميل أو الموبايل"><select id="orderFilter"><option value="all">كل الحالات</option><option value="new">جديد</option><option value="processing">قيد التجهيز</option><option value="shipped">تم الشحن</option><option value="delivered">تم التسليم</option><option value="cancelled">ملغي</option></select><button class="manage-btn" id="loadOrdersBtn">تحديث الطلبات</button><button class="manage-btn secondary" id="exportOrdersBtn">CSV</button></div>
+        <div class="table-wrap"><table class="orders-table"><thead><tr><th>#</th><th>العميل</th><th>البيانات</th><th>المنتجات</th><th>الإجمالي</th><th>الحالة</th><th>التاريخ</th><th>عرض</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
+      </section>
+
+      <section id="reviewsPanel" class="panel admin-panel">
+        <h2 class="panel-title">التقييمات ⭐</h2><p class="panel-desc">مراجعة ونشر أو حذف تقييمات العملاء.</p>
+        <div class="tools"><select id="reviewFilter"><option value="pending">قيد المراجعة</option><option value="approved">منشورة</option><option value="all">الكل</option></select><button class="manage-btn" id="refreshReviewsBtn">تحديث</button></div>
+        <div id="reviewsList" class="list"></div><div id="reviewsStatus" class="status"></div>
+      </section>
+
+      <section id="invoicesPanel" class="panel admin-panel">
+        <h2 class="panel-title">الفواتير 🧾</h2><p class="panel-desc">طباعة فاتورة أي طلب.</p>
+        <div class="tools"><input id="invoiceSearch" placeholder="ابحث برقم الطلب أو اسم العميل"><button class="manage-btn" id="refreshInvoicesBtn">تحديث</button></div>
+        <div id="invoicesList" class="list"></div><div id="invoicesStatus" class="status"></div>
+      </section>
+
+      <section id="analyticsPanel" class="panel admin-panel">
+        <h2 class="panel-title">التقارير والإحصائيات 📈</h2><p class="panel-desc">نفس بيانات لوحة التحكم بدون أرقام وهمية.</p>
+        <div class="card"><div class="card-head"><h3>المبيعات</h3><button class="manage-btn" id="analyticsRefresh">تحديث</button></div><div class="sales-chart" id="analyticsChart"></div></div>
+      </section>
+
+      <section id="settingsPanel" class="panel admin-panel">
+        <h2 class="panel-title">إعدادات الموقع ⚙️</h2><p class="panel-desc">الإعدادات تُحفظ في جدول site_settings داخل Supabase.</p>
+        <div class="card">
+          <div class="form-grid">
+            <div><label>اسم المتجر</label><input id="settingStoreName" placeholder="D&L ACC"></div>
+            <div><label>رقم واتساب</label><input id="settingWhatsapp" placeholder="201147013334"></div>
+            <div><label>حد الشحن المجاني</label><input id="settingFreeShipping" type="number" min="0" placeholder="1000"></div>
+            <div><label>Instagram</label><input id="settingInstagram" type="url" placeholder="https://instagram.com/"></div>
+            <div><label>Facebook</label><input id="settingFacebook" type="url" placeholder="https://facebook.com/"></div>
+            <div class="full"><label>الشريط العلوي</label><input id="settingAnnouncement" placeholder="✨ شحن مجاني للطلبات فوق 1000 ج.م"></div>
+            <div class="full admin-reset-box" style="margin-top:6px;padding:16px;border:1px solid rgba(239,68,68,.22);border-radius:16px;background:rgba(239,68,68,.05)">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+                <div>
+                  <b style="display:block;margin-bottom:4px">تصفير بيانات الإدارة</b>
+                  <span class="muted">يمسح الطلبات والكوبونات فقط. التقييمات والمنتجات والمخزون وإعدادات الموقع لا تتأثر.</span>
+                </div>
+                <button type="button" id="resetAdminDataBtn" class="danger" style="width:auto;margin:0">تصفير الطلبات والكوبونات فقط 🗑️</button>
+              </div>
+              <div id="resetAdminDataStatus" class="status"></div>
+            </div>
+            <div class="full whatsapp-message-setting">
+              <label>رسالة واتساب عند تأكيد الطلب 💬</label>
+              <textarea id="settingWhatsappMessage" rows="9" placeholder="مرحباً D&L ACC 👋
+أود تأكيد هذا الطلب:
+
+{items}
+💰 الإجمالي: {total} ج.م
+👤 الاسم: {name}
+📱 الموبايل: {phone}
+📍 العنوان: {address}
+{order_id}
+{coupon}"></textarea>
+              <small class="setting-hint">تقدري تكتبي أي رسالة. المتغيرات المتاحة: {name} الاسم، {phone} الموبايل، {address} العنوان، {items} المنتجات، {total} الإجمالي، {order_id} رقم الطلب، {coupon} الكوبون.</small>
+            </div>
+          </div>
+          <div class="actions"><button class="manage-btn" id="saveSettingsBtn">حفظ الإعدادات 💾</button></div><div id="settingsStatus" class="status"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</section>
+
+<div id="orderDetailModal" class="order-detail-modal hidden" aria-hidden="true"><div class="order-detail-box"><div class="modal-head"><h2>تفاصيل الطلب</h2><button id="closeOrderDetail" class="modal-close">×</button></div><div id="orderDetailContent"></div></div></div>
+
+<div id="editModal" class="edit-modal hidden" aria-hidden="true"><div class="edit-modal-box">
+  <div class="modal-head"><h2>تعديل المنتج</h2><button id="closeEditModal" class="modal-close">×</button></div>
+  <form id="editProductForm">
+    <label>اسم المنتج</label><input id="editTitle" required>
+    <label>السعر الأصلي</label><input id="editPrice" type="number" min="0" step="0.01" required>
+    <label>المخزون</label><input id="editStock" type="number" min="0" step="1" required>
+    <label>الخصم</label><div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center"><select id="editDiscountType"><option value="percent">% نسبة</option><option value="fixed">ج.م قيمة</option></select><input id="editDiscountValue" type="number" min="0" step="0.01"><label style="margin:0;white-space:nowrap"><input id="editDiscountEnabled" type="checkbox" style="width:auto"> تفعيل</label></div>
+    <label>التصنيف</label><input id="editCategory" required>
+    <div class="actions"><button id="saveEditBtn" class="manage-btn" type="submit">حفظ</button><button id="cancelEditBtn" class="manage-btn secondary" type="button">إلغاء</button></div>
+  </form>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  const root=document.documentElement;
+  const saved=localStorage.getItem("dlacc-theme");
+  if(saved==="dark") root.classList.add("dark");
+  function update(){
+    const b=document.getElementById("themeToggle"); if(!b) return;
+    const dark=root.classList.contains("dark");
+    b.innerHTML=dark?'<i class="fa-solid fa-sun"></i><span>الوضع الفاتح</span>':'<i class="fa-solid fa-moon"></i><span>الوضع الداكن</span>';
+    b.title=dark?"تفعيل الوضع الفاتح":"تفعيل الوضع الداكن";
+  }
+  document.addEventListener("DOMContentLoaded",function(){
+    update();
+    document.getElementById("themeToggle")?.addEventListener("click",function(){
+      root.classList.toggle("dark");
+      localStorage.setItem("dlacc-theme",root.classList.contains("dark")?"dark":"light");
+      update();
+    });
+  });
+})();
+</script>
+<script src="admin.js"></script>
+<script>
+(function(){
+ const sidebar=document.getElementById('sidebar'), main=document.getElementById('mainWrapper'), toggle=document.getElementById('sidebarToggle'), icon=document.getElementById('toggleIcon');
+ toggle?.addEventListener('click',()=>{sidebar.classList.toggle('collapsed');main.classList.toggle('expanded');icon.className=sidebar.classList.contains('collapsed')?'fa-solid fa-chevron-left':'fa-solid fa-chevron-right';});
+ document.getElementById('mobileMenuBtn')?.addEventListener('click',()=>sidebar.classList.toggle('mobile-open'));
+ const tabs=[...document.querySelectorAll('.admin-tab')], panels=[...document.querySelectorAll('.admin-panel')], title=document.getElementById('pageTitle');
+ const names={dashboardPanel:'الرئيسية',productsPanel:'المنتجات',inventoryPanel:'المخزون',discountsPanel:'خصومات المنتجات',offersPanel:'العروض الموسمية',couponsPanel:'أكواد الخصم',ordersPanel:'الطلبات',reviewsPanel:'التقييمات',invoicesPanel:'الفواتير',analyticsPanel:'التقارير والإحصائيات',settingsPanel:'إعدادات الموقع'};
+ function activate(tab){const id=tab.dataset.tab;tabs.forEach(x=>x.classList.remove('active'));tab.classList.add('active');panels.forEach(x=>x.classList.remove('active'));document.getElementById(id)?.classList.add('active');title.textContent=names[id]||'لوحة الإدارة';sidebar.classList.remove('mobile-open');}
+ tabs.forEach(t=>t.addEventListener('click',()=>activate(t)));
+ const pairs=[['v11Orders','sideOrders'],['v11Coupons','sideCoupons'],['statProducts','sideProducts'],['v11PendingReviews','sideReviews']];
+ pairs.forEach(([srcId,dstId])=>{const src=document.getElementById(srcId),dst=document.getElementById(dstId);if(src&&dst){const sync=()=>dst.textContent=src.textContent||'0';sync();new MutationObserver(sync).observe(src,{childList:true,characterData:true,subtree:true});}});
+ document.getElementById('analyticsRefresh')?.addEventListener('click',()=>{const src=document.getElementById('salesChart'), dst=document.getElementById('analyticsChart');if(src&&dst)dst.innerHTML=src.innerHTML;});
+})();
+</script>
+<script src="register-sw.js" defer></script>
+</body>
+</html>
