@@ -26,6 +26,32 @@ function pricing(product) {
     return { original, sale, enabled: enabled && sale < original, type, value, percent: original ? Math.round((1 - sale / original) * 100) : 0 };
 }
 function adminPrice(value) { return `${Number(value || 0).toLocaleString("ar-EG")} ج.م`; }
+function normalizeProductCode(value) {
+    return String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+}
+function makeCandidateProductCode() {
+    return `DL-${String(Math.floor(Math.random() * 1000000)).padStart(6, "0")}`;
+}
+async function productCodeExists(code, excludeId = null) {
+    const normalized = normalizeProductCode(code);
+    if (!normalized) return false;
+    let query = supabaseClient.from("products").select("id").eq("product_code", normalized).limit(1);
+    if (excludeId != null) query = query.neq("id", Number(excludeId));
+    const { data, error } = await query;
+    if (error) {
+        // If the new column has not been migrated yet, surface the real error to the caller.
+        throw error;
+    }
+    return Array.isArray(data) && data.length > 0;
+}
+async function generateUniqueProductCode() {
+    for (let i = 0; i < 25; i++) {
+        const candidate = makeCandidateProductCode();
+        if (!(await productCodeExists(candidate))) return candidate;
+    }
+    throw new Error("تعذر توليد كود فريد. حاول مرة أخرى.");
+}
+
 function discountLabel(product) { const p=pricing(product); return p.enabled ? (p.type === "percent" ? `خصم ${p.value}%` : `خصم ${adminPrice(p.value)}`) : "بدون خصم"; }
 
 function status(element, message, type = "") {
@@ -187,6 +213,7 @@ function previewImage() {
 
 function resetProductForm() {
     $("title").value = "";
+    $("productCode").value = "";
     $("price").value = "";
     $("category").value = "";
     if ($("stock")) $("stock").value = "0";
@@ -202,12 +229,13 @@ function resetProductForm() {
 
 async function addProduct() {
     const title = $("title").value.trim();
+    const productCode = normalizeProductCode($("productCode").value);
     const price = Number($("price").value);
     const category = $("category").value;
     const stock = Math.max(0, Math.floor(Number($("stock")?.value || 0)));
     const file = $("imageFile").files[0];
 
-    if (!title || !category || !file || !Number.isFinite(price) || price < 0) {
+    if (!title || !productCode || !category || !file || !Number.isFinite(price) || price < 0) {
         status($("addStatus"), "اكمل البيانات واختر صورة صحيحة.", "err");
         return;
     }
@@ -218,6 +246,19 @@ async function addProduct() {
     }
 
     $("addBtn").disabled = true;
+    status($("addStatus"), "جاري التحقق من كود المنتج ورفع الصورة...", "ok");
+
+    try {
+        if (await productCodeExists(productCode)) {
+            status($("addStatus"), "كود المنتج مستخدم بالفعل. اختر كودًا آخر.", "err");
+            $("productCode").focus();
+            return;
+        }
+    } catch (codeError) {
+        status($("addStatus"), `تعذر التحقق من كود المنتج: ${codeError.message || codeError}`, "err");
+        return;
+    }
+
     status($("addStatus"), "جاري رفع الصورة وحفظ المنتج...", "ok");
 
     let uploadedPath = null;
@@ -254,12 +295,13 @@ async function addProduct() {
             .from("products")
             .insert({
                 title,
+                product_code: productCode,
                 price,
                 category,
                 image: publicUrl,
                 stock
             })
-            .select("id,title,price,category,image,discount_enabled,discount_type,discount_value")
+            .select("id,title,product_code,price,category,image,discount_enabled,discount_type,discount_value")
             .single();
 
         if (insert.error) {
@@ -300,8 +342,8 @@ async function loadProducts() {
     status($("productsStatus"), "جاري تحميل المنتجات...", "ok");
 
     try {
-        let result = await supabaseClient.from("products").select("id,title,price,category,image,discount_enabled,discount_type,discount_value").order("id", { ascending: false });
-        if (result.error) result = await supabaseClient.from("products").select("id,title,price,category,image").order("id", { ascending: false });
+        let result = await supabaseClient.from("products").select("id,title,product_code,price,category,image,discount_enabled,discount_type,discount_value").order("id", { ascending: false });
+        if (result.error) result = await supabaseClient.from("products").select("id,title,product_code,price,category,image").order("id", { ascending: false });
         if (result.error) throw result.error;
         const data = (result.data || []).map(p => ({...p, discount_enabled:Boolean(p.discount_enabled), discount_type:p.discount_type||"percent", discount_value:Number(p.discount_value||0)}));
 
@@ -330,6 +372,7 @@ async function loadProducts() {
 function createProductCard(product) {
     const card = document.createElement("div");
     card.className = "product-card";
+    card.dataset.search = `${product.title || ""} ${product.product_code || ""} ${product.category || ""}`.toLowerCase();
 
     if (product.image) {
         const img = document.createElement("img");
@@ -357,6 +400,10 @@ function createProductCard(product) {
     const category = document.createElement("span");
     category.textContent = product.category || "بدون تصنيف";
 
+    const code = document.createElement("span");
+    code.className = "product-code-badge";
+    code.textContent = product.product_code || "بدون كود";
+
     const price = document.createElement("strong");
     const p = pricing(product);
     if (p.enabled) {
@@ -367,7 +414,7 @@ function createProductCard(product) {
         price.textContent = adminPrice(p.original);
     }
 
-    meta.append(category, price);
+    meta.append(category, code, price);
 
     const editButton = document.createElement("button");
     editButton.type = "button";
@@ -403,6 +450,7 @@ function editProduct(product) {
     console.log("جاري تعديل المنتج برقم ID:", editingProductId);
 
     $("editTitle").value = product.title || "";
+    $("editProductCode").value = product.product_code || "";
     $("editPrice").value = product.price ?? "";
     $("editCategory").value = product.category || "";
     $("editDiscountType").value = product.discount_type === "fixed" ? "fixed" : "percent";
@@ -423,6 +471,7 @@ $("editProductForm").addEventListener("submit", async (event) => {
     }
 
     const title = $("editTitle").value.trim();
+    const productCode = normalizeProductCode($("editProductCode").value);
     const price = Number($("editPrice").value);
     const category = $("editCategory").value.trim();
     const stock = Math.max(0, Math.floor(Number($("editStock")?.value || 0)));
@@ -430,7 +479,7 @@ $("editProductForm").addEventListener("submit", async (event) => {
     const discountValue = Number($("editDiscountValue").value || 0);
     const discountEnabled = $("editDiscountEnabled").checked;
 
-    if (!title || !category || !Number.isFinite(price) || price < 0 || !Number.isFinite(discountValue) || discountValue < 0 || (discountType === "percent" && discountValue > 100) || (discountType === "fixed" && discountValue > price)) {
+    if (!title || !productCode || !category || !Number.isFinite(price) || price < 0 || !Number.isFinite(discountValue) || discountValue < 0 || (discountType === "percent" && discountValue > 100) || (discountType === "fixed" && discountValue > price)) {
         alert("من فضلك اكتب اسمًا وتصنيفًا وسعرًا صحيحًا.");
         return;
     }
@@ -439,10 +488,14 @@ $("editProductForm").addEventListener("submit", async (event) => {
     status($("productsStatus"), "جاري حفظ التعديلات في قاعدة البيانات...", "ok");
 
     try {
+        if (await productCodeExists(productCode, editingProductId)) {
+            throw new Error("كود المنتج مستخدم بالفعل مع منتج آخر.");
+        }
+
         // إجبار الـ ID على أن يكون رقماً صحيحاً وتحديث السعر والبيانات بدقة
         const { data, error } = await supabaseClient
             .from("products")
-            .update({ title: title, price: price, category: category, stock, discount_enabled: discountEnabled, discount_type: discountType, discount_value: discountValue })
+            .update({ title: title, product_code: productCode, price: price, category: category, stock, discount_enabled: discountEnabled, discount_type: discountType, discount_value: discountValue })
             .eq("id", Number(editingProductId))
             .select();
 
@@ -536,6 +589,30 @@ $("logoutBtn")?.addEventListener("click", logout);
 $("imageFile")?.addEventListener("change", previewImage);
 $("addBtn")?.addEventListener("click", addProduct);
 $("loadProductsBtn")?.addEventListener("click", loadProducts);
+$("generateProductCodeBtn")?.addEventListener("click", async () => {
+    const btn = $("generateProductCodeBtn");
+    btn.disabled = true;
+    try {
+        $("productCode").value = await generateUniqueProductCode();
+        status($("addStatus"), "تم توليد كود منتج فريد ✅", "ok");
+    } catch (error) {
+        status($("addStatus"), `تعذر توليد الكود: ${error.message || error}`, "err");
+    } finally {
+        btn.disabled = false;
+    }
+});
+$("adminProductSearch")?.addEventListener("input", () => {
+    const q = normalizeProductCode($("adminProductSearch").value).toLowerCase();
+    const cards = document.querySelectorAll("#productsList .product-card");
+    cards.forEach(card => {
+        const hay = (card.dataset.search || "").toLowerCase();
+        card.style.display = !q || hay.includes(q) ? "" : "none";
+    });
+});
+$("clearAdminProductSearch")?.addEventListener("click", () => {
+    if ($("adminProductSearch")) $("adminProductSearch").value = "";
+    document.querySelectorAll("#productsList .product-card").forEach(card => card.style.display = "");
+});
 
 $("password")?.addEventListener("keydown", event => {
     if (event.key === "Enter") login();
@@ -802,7 +879,7 @@ async function loadProductsV11(){
   const list=$("productsList"); if(!list) return;
   try{
     let q=await supabaseClient.from("products").select("id,title,price,category,image,stock,discount_enabled,discount_type,discount_value,offer_enabled,offer_name,offer_type,offer_value,offer_starts_at,offer_ends_at").order("id",{ascending:false});
-    if(q.error){ q=await supabaseClient.from("products").select("id,title,price,category,image,discount_enabled,discount_type,discount_value").order("id",{ascending:false}); }
+    if(q.error){ q=await supabaseClient.from("products").select("id,title,product_code,price,category,image,discount_enabled,discount_type,discount_value").order("id",{ascending:false}); }
     if(q.error) throw q.error;
     adminProductsCache=(q.data||[]).map(p=>({...p,stock:Number(p.stock||0),discount_enabled:Boolean(p.discount_enabled),discount_type:p.discount_type||"percent",discount_value:Number(p.discount_value||0),offer_enabled:Boolean(p.offer_enabled),offer_type:p.offer_type||"percent",offer_value:Number(p.offer_value||0)}));
     list.textContent=""; populateDiscountProducts(adminProductsCache); populateOfferProducts(); renderInventory(); renderOffers();

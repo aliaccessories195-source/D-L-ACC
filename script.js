@@ -23,6 +23,7 @@ const supabaseClient = window.supabase.createClient(
 
 let cart = [];
 let allProducts = [];
+let productRatings = {};
 let activeCoupon = null;
 let siteSettings = {};
 const DEFAULT_WHATSAPP_ORDER_MESSAGE = `مرحباً D&L ACC 👋
@@ -274,14 +275,34 @@ async function fetchProducts() {
     const container = document.getElementById("products-container");
 
     try {
-        let result = await supabaseClient.from("products").select("id,title,price,category,image,stock,discount_enabled,discount_type,discount_value,offer_enabled,offer_name,offer_type,offer_value,offer_starts_at,offer_ends_at").order("id", { ascending: false });
+        let result = await supabaseClient.from("products").select("id,title,product_code,price,category,image,stock,discount_enabled,discount_type,discount_value,offer_enabled,offer_name,offer_type,offer_value,offer_starts_at,offer_ends_at").order("id", { ascending: false });
         if (result.error) {
             console.warn("Discount columns are not active yet; loading legacy product fields.", result.error);
-            result = await supabaseClient.from("products").select("id,title,price,category,image,stock").order("id", { ascending: false });
+            result = await supabaseClient.from("products").select("id,title,product_code,price,category,image,stock").order("id", { ascending: false });
         }
         if (result.error) throw result.error;
         const data = result.data;
         allProducts = (Array.isArray(data) ? data : []).map(p => ({...p, stock:Number(p.stock||0), discount_enabled: Boolean(p.discount_enabled), discount_type: p.discount_type || "percent", discount_value: Number(p.discount_value || 0), offer_enabled:Boolean(p.offer_enabled), offer_type:p.offer_type||"percent", offer_value:Number(p.offer_value||0)}));
+
+        // تحميل ملخص تقييمات العملاء مرة واحدة لعرضه على بطاقات المنتجات.
+        productRatings = {};
+        try {
+            const reviewsResult = await supabaseClient.from("reviews").select("product_id,rating").eq("approved", true);
+            if (!reviewsResult.error) {
+                (reviewsResult.data || []).forEach(review => {
+                    const id = String(review.product_id);
+                    const rating = Math.max(1, Math.min(5, Number(review.rating) || 0));
+                    if (!rating) return;
+                    if (!productRatings[id]) productRatings[id] = { total: 0, count: 0 };
+                    productRatings[id].total += rating;
+                    productRatings[id].count += 1;
+                });
+                Object.keys(productRatings).forEach(id => {
+                    const r = productRatings[id];
+                    r.average = r.count ? Math.round((r.total / r.count) * 10) / 10 : 0;
+                });
+            }
+        } catch (_) {}
         renderCategoryNavigation();
         displayProducts(allProducts);
         renderFeaturedProducts();
@@ -376,11 +397,31 @@ function createProductCard(product, index) {
 
     const title = document.createElement("h3");
     title.textContent = product.title || "منتج مميز";
+
+    if (product.product_code) {
+        const code = document.createElement("small");
+        code.className = "product-code";
+        code.textContent = `كود: ${product.product_code}`;
+        info.appendChild(code);
+    }
     if (Number.isFinite(Number(product.stock)) && Number(product.stock) <= 5) {
         const stockBadge=document.createElement("span"); stockBadge.className="store-discount-badge"; stockBadge.textContent=Number(product.stock)<=0?"نفدت الكمية":"متبقي كمية محدودة"; info.appendChild(stockBadge);
     }
     if (getPricing(product).offerActive) {
         const offerBadge=document.createElement("span"); offerBadge.className="store-discount-badge"; offerBadge.textContent=`⚡ ${product.offer_name||"عرض موسمي"}`; info.appendChild(offerBadge);
+    }
+
+    // تقييم العملاء يظهر مباشرة داخل بطاقة المنتج في صفحة "تسوقي الآن".
+    const rating = document.createElement("div");
+    rating.className = "product-rating-summary";
+    const ratingData = productRatings[String(product.id)];
+    if (ratingData?.count) {
+        const avg = Number(ratingData.average || 0);
+        const rounded = Math.round(avg);
+        rating.innerHTML = `<span class="rating-stars">${"★".repeat(rounded)}${"☆".repeat(5-rounded)}</span><strong>${avg.toFixed(1)}</strong><small>(${ratingData.count} تقييم)</small>`;
+        rating.title = `متوسط تقييم العملاء: ${avg.toFixed(1)} من 5`;
+    } else {
+        rating.innerHTML = `<span class="rating-stars empty">☆☆☆☆☆</span><small>لا توجد تقييمات بعد</small>`;
     }
 
     const footer = document.createElement("div");
@@ -402,7 +443,7 @@ function createProductCard(product, index) {
     button.addEventListener("click", () => addToCart(product));
 
     footer.append(price, button);
-    info.append(category, title, footer);
+    info.append(category, title, rating, footer);
     card.append(imageWrapper, info);
 
     return card;
@@ -436,7 +477,7 @@ function getVisibleProducts() {
     const sort = document.getElementById("sort-products")?.value || "newest";
 
     if (currentCategory !== "الكل") list = list.filter(p => categoryMatches(p.category, currentCategory));
-    if (search) list = list.filter(p => `${p.title || ""} ${p.category || ""}`.toLowerCase().includes(search));
+    if (search) list = list.filter(p => `${p.title || ""} ${p.product_code || ""} ${p.category || ""}`.toLowerCase().includes(search));
     if (priceFilter !== "all") {
         list = list.filter(p => {
             const price = getSalePrice(p);
@@ -1113,6 +1154,19 @@ function openProductDetails(product) {
     const price = document.createElement("div");
     price.className = "details-price";
     price.textContent = formatPrice(getSalePrice(product));
+
+    // ملخص تقييم العملاء يظهر داخل نافذة تفاصيل المنتج نفسها، وليس أسفلها فقط.
+    const ratingSummary = document.createElement("div");
+    ratingSummary.className = "details-rating-summary";
+    const ratingData = productRatings[String(product.id)];
+    if (ratingData?.count) {
+        const avg = Number(ratingData.average || 0);
+        const rounded = Math.max(0, Math.min(5, Math.round(avg)));
+        ratingSummary.innerHTML = `<span class="details-rating-stars">${"★".repeat(rounded)}${"☆".repeat(5-rounded)}</span><strong>${avg.toFixed(1)}</strong><span class="details-rating-count">(${ratingData.count} تقييم من العملاء)</span>`;
+    } else {
+        ratingSummary.innerHTML = '<span class="details-rating-stars empty">☆☆☆☆☆</span><span class="details-rating-count">لا توجد تقييمات منشورة لهذا المنتج حتى الآن</span>';
+    }
+
     const divider = document.createElement("div");
     divider.className = "details-divider";
     const note = document.createElement("p");
@@ -1145,7 +1199,7 @@ function openProductDetails(product) {
     });
     actions.append(add, fav);
 
-    info.append(eyebrow, title, price, divider, note, meta, actions);
+    info.append(eyebrow, title, price, ratingSummary, divider, note, meta, actions);
     layout.append(media, info);
     content.appendChild(layout);
     const reviewsBox=document.createElement("div"); reviewsBox.className="v11-review-loading"; reviewsBox.textContent="جاري تحميل التقييمات..."; content.appendChild(reviewsBox); loadReviewsForProduct(product.id).then(rows=>{reviewsBox.textContent="";renderProductReviews(reviewsBox,rows,product.id);});

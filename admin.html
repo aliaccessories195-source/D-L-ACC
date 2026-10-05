@@ -260,7 +260,7 @@ button:focus-visible{
 
 
 .whatsapp-message-setting textarea{width:100%;min-height:180px;resize:vertical;line-height:1.8;font-family:inherit;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:rgba(0,0,0,.18);color:var(--text);outline:none;transition:.2s}.whatsapp-message-setting textarea:focus{border-color:rgba(99,102,241,.65);box-shadow:0 0 0 4px rgba(99,102,241,.10)}.setting-hint{display:block;margin-top:8px;color:var(--muted);font-size:12px;line-height:1.8}
-</style>
+.product-code-badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:rgba(99,102,241,.10);color:#6366f1;font-size:11px;font-weight:800;white-space:nowrap}.product-info .product-meta{flex-wrap:wrap}</style>
 </head>
 <body>
 
@@ -332,6 +332,7 @@ button:focus-visible{
           <div class="card-head"><h3>إضافة منتج جديد</h3></div>
           <div class="form-grid">
             <div><label>اسم المنتج</label><input id="title" placeholder="اسم المنتج"></div>
+            <div><label>كود المنتج</label><div style="display:flex;gap:8px"><input id="productCode" placeholder="DL-000001" maxlength="30" autocomplete="off"><button type="button" class="manage-btn secondary" id="generateProductCodeBtn" style="white-space:nowrap">توليد كود</button></div><small style="display:block;color:var(--muted);margin-top:6px">يمكنك كتابة الكود يدويًا أو توليده تلقائيًا، ولن يُسمح بالتكرار.</small></div>
             <div><label>السعر الأصلي</label><input id="price" type="number" min="0" step="0.01" placeholder="0"></div>
             <div><label>التصنيف</label><input id="category" placeholder="سلسله"></div>
             <div><label>الكمية في المخزون</label><input id="stock" type="number" min="0" step="1" value="0"></div>
@@ -339,7 +340,7 @@ button:focus-visible{
           </div>
           <div class="actions"><button class="manage-btn" id="addBtn">إضافة المنتج</button><button class="manage-btn secondary" id="loadProductsBtn">تحديث المنتجات</button></div><div id="addStatus" class="status"></div>
         </div>
-        <div class="card"><div class="card-head"><h3>المنتجات الحالية</h3></div><div id="productsList" class="products-grid"></div><div id="productsStatus" class="status"></div></div>
+        <div class="card"><div class="card-head"><h3>المنتجات الحالية</h3></div><div class="tools"><input id="adminProductSearch" placeholder="ابحث باسم المنتج أو كود المنتج أو القسم..." autocomplete="off"><button class="manage-btn secondary" id="clearAdminProductSearch" type="button">مسح</button></div><div id="productsList" class="products-grid"></div><div id="productsStatus" class="status"></div></div>
       </section>
 
       <section id="discountsPanel" class="panel admin-panel">
@@ -465,6 +466,7 @@ button:focus-visible{
   <div class="modal-head"><h2>تعديل المنتج</h2><button id="closeEditModal" class="modal-close">×</button></div>
   <form id="editProductForm">
     <label>اسم المنتج</label><input id="editTitle" required>
+    <label>كود المنتج</label><input id="editProductCode" maxlength="30" required>
     <label>السعر الأصلي</label><input id="editPrice" type="number" min="0" step="0.01" required>
     <label>المخزون</label><input id="editStock" type="number" min="0" step="1" required>
     <label>الخصم</label><div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center"><select id="editDiscountType"><option value="percent">% نسبة</option><option value="fixed">ج.م قيمة</option></select><input id="editDiscountValue" type="number" min="0" step="0.01"><label style="margin:0;white-space:nowrap"><input id="editDiscountEnabled" type="checkbox" style="width:auto"> تفعيل</label></div>
