@@ -196,6 +196,7 @@ function loadCart() {
                 id: String(item.id),
                 name: item.name,
                 price: Number(item.price),
+                image: typeof item.image === "string" ? item.image : "",
                 quantity: Math.max(1, Math.floor(Number(item.quantity)))
             }));
     } catch (error) {
@@ -303,6 +304,7 @@ async function fetchProducts() {
                 });
             }
         } catch (_) {}
+        hydrateCartImages();
         renderCategoryNavigation();
         displayProducts(allProducts);
         renderFeaturedProducts();
@@ -442,8 +444,14 @@ function createProductCard(product, index) {
     button.innerHTML = '<i class="fas fa-shopping-bag"></i> إضافة للسلة';
     button.addEventListener("click", () => addToCart(product));
 
+    const reviewBtn = document.createElement("button");
+    reviewBtn.type = "button";
+    reviewBtn.className = "card-review-btn";
+    reviewBtn.innerHTML = '<i class="fas fa-star"></i> قيّمي المنتج';
+    reviewBtn.addEventListener("click", (event) => { event.stopPropagation(); openQuickView(product, true); });
+
     footer.append(price, button);
-    info.append(category, title, rating, footer);
+    info.append(category, title, rating, reviewBtn, footer);
     card.append(imageWrapper, info);
 
     return card;
@@ -566,6 +574,7 @@ function addToCart(product) {
             id: productId,
             name: String(product.title || "منتج"),
             price,
+            image: safeImageUrl(product.image),
             quantity: 1
         });
     }
@@ -619,6 +628,13 @@ function updateCartUI() {
         const row = document.createElement("div");
         row.className = "cart-item animate__animated animate__fadeIn";
 
+        const thumb = document.createElement("img");
+        thumb.className = "cart-item-img";
+        thumb.alt = item.name || "منتج";
+        thumb.loading = "lazy";
+        thumb.src = item.image || FALLBACK_IMAGE;
+        thumb.onerror = () => { thumb.onerror = null; thumb.src = FALLBACK_IMAGE; };
+
         const info = document.createElement("div");
         info.className = "item-info";
 
@@ -638,7 +654,7 @@ function updateCartUI() {
         remove.innerHTML = '<i class="fas fa-trash-alt"></i> إزالة';
         remove.addEventListener("click", () => removeFromCart(index));
 
-        row.append(info, remove);
+        row.append(thumb, info, remove);
         cartItemsContainer.appendChild(row);
     });
 
@@ -852,6 +868,7 @@ async function submitCheckout(event) {
 
     const whatsappURL = `https://api.whatsapp.com/send?phone=${MY_WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
     window.open(whatsappURL, "_blank", "noopener,noreferrer");
+    const reviewItems = orderItems.map(i => ({ ...i }));
     cart = [];
     activeCoupon = null;
     const couponInput=document.getElementById("checkout-coupon"); if(couponInput) couponInput.value="";
@@ -860,6 +877,7 @@ async function submitCheckout(event) {
     closeCheckout();
     toggleCart();
     showToast(savedOrder ? "تم تسجيل الطلب وفتح واتساب ✅" : "تم تجهيز الطلب وفتح واتساب ✅");
+    setTimeout(() => openPostOrderReview(reviewItems, name, savedOrderId), 600);
     if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fab fa-whatsapp"></i> تأكيد الطلب وفتح واتساب'; }
 }
 
@@ -967,7 +985,7 @@ function toggleFavorite(product) {
     saveFavorites();
 }
 
-function openQuickView(product) {
+function openQuickView(product, scrollToReview = false) {
     rememberRecent(product);
     const modal = document.getElementById("quick-view");
     const content = document.getElementById("quick-view-content");
@@ -1009,6 +1027,15 @@ function openQuickView(product) {
     info.append(category, title, priceEl, desc, add);
     grid.append(media, info);
     content.appendChild(grid);
+    const qvReviews = document.createElement("div");
+    qvReviews.className = "v11-review-loading";
+    qvReviews.textContent = "جاري تحميل التقييمات...";
+    content.appendChild(qvReviews);
+    loadReviewsForProduct(product.id).then(rows => {
+        qvReviews.textContent = "";
+        renderProductReviews(qvReviews, rows, product.id);
+        if (scrollToReview) setTimeout(() => qvReviews.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+    });
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
@@ -1375,3 +1402,141 @@ window.addEventListener('unhandledrejection', function (event) {
 window.addEventListener('error', function (event) {
   console.warn('D&L ACC browser error:', event.message);
 });
+
+
+/* -----------------------------
+   صور السلة + تقييم بعد الطلب
+----------------------------- */
+function hydrateCartImages() {
+    let changed = false;
+    cart.forEach(item => {
+        if (item.image) return;
+        const p = allProducts.find(x => String(x.id) === String(item.id));
+        if (p?.image) { item.image = safeImageUrl(p.image); changed = true; }
+    });
+    if (changed) { saveCart(); updateCartUI(); }
+}
+
+function makeStarPicker(onChange) {
+    const wrap = document.createElement("div");
+    wrap.className = "v11-rating-picker";
+    let value = 0;
+    const btns = [1, 2, 3, 4, 5].map(n => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = "★";
+        b.dataset.rating = n;
+        b.setAttribute("aria-label", `${n} من 5`);
+        b.addEventListener("click", () => { value = n; paint(); onChange?.(n); });
+        wrap.appendChild(b);
+        return b;
+    });
+    function paint() { btns.forEach(b => b.classList.toggle("is-selected", Number(b.dataset.rating) <= value)); }
+    return wrap;
+}
+
+function openPostOrderReview(items, customerName, orderId) {
+    document.getElementById("post-review-modal")?.remove();
+    const modal = document.createElement("div");
+    modal.id = "post-review-modal";
+    modal.className = "post-review-modal";
+    const panel = document.createElement("div");
+    panel.className = "post-review-panel";
+    panel.innerHTML = `<button type="button" class="post-review-close" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+        <span class="eyebrow">THANK YOU</span><h2>شكرًا على طلبك 🤍</h2>
+        <p class="post-review-sub">رأيك يهمنا! قيّمي الموقع والمنتجات اللي طلبتيها (اختياري).</p>`;
+    const state = { site: { rating: 0, comment: "" }, products: {} };
+
+    // تقييم الموقع
+    const siteBox = document.createElement("div");
+    siteBox.className = "post-review-item";
+    const siteTitle = document.createElement("h4");
+    siteTitle.textContent = "⭐ تقييم الموقع وتجربة الشراء";
+    const siteComment = document.createElement("textarea");
+    siteComment.rows = 2;
+    siteComment.placeholder = "إيه رأيك في الموقع وتجربة الطلب؟";
+    siteComment.addEventListener("input", () => { state.site.comment = siteComment.value.trim(); });
+    siteBox.append(siteTitle, makeStarPicker(n => { state.site.rating = n; }), siteComment);
+    panel.appendChild(siteBox);
+
+    // تقييم كل منتج (بصورته)
+    const seen = new Set();
+    items.forEach(item => {
+        if (seen.has(String(item.id))) return;
+        seen.add(String(item.id));
+        const product = allProducts.find(x => String(x.id) === String(item.id));
+        const box = document.createElement("div");
+        box.className = "post-review-item";
+        const head = document.createElement("div");
+        head.className = "post-review-head";
+        const img = document.createElement("img");
+        img.src = safeImageUrl(product?.image || item.image);
+        img.alt = item.name || "منتج";
+        img.onerror = () => { img.onerror = null; img.src = FALLBACK_IMAGE; };
+        const t = document.createElement("h4");
+        t.textContent = item.name || "منتج";
+        head.append(img, t);
+        const ta = document.createElement("textarea");
+        ta.rows = 2;
+        ta.placeholder = "رأيك في القطعة...";
+        const st = (state.products[item.id] = { rating: 0, comment: "" });
+        ta.addEventListener("input", () => { st.comment = ta.value.trim(); });
+        box.append(head, makeStarPicker(n => { st.rating = n; }), ta);
+        panel.appendChild(box);
+    });
+
+    const status = document.createElement("div");
+    status.className = "checkout-status";
+    const actions = document.createElement("div");
+    actions.className = "post-review-actions";
+    const send = document.createElement("button");
+    send.type = "button";
+    send.className = "post-review-send";
+    send.textContent = "إرسال التقييمات";
+    const skip = document.createElement("button");
+    skip.type = "button";
+    skip.className = "post-review-skip";
+    skip.textContent = "لاحقًا";
+    actions.append(send, skip);
+    panel.append(status, actions);
+    modal.appendChild(panel);
+    document.body.appendChild(modal);
+    document.body.style.overflow = "hidden";
+
+    const close = () => { modal.remove(); document.body.style.overflow = ""; };
+    skip.addEventListener("click", close);
+    panel.querySelector(".post-review-close").addEventListener("click", close);
+    modal.addEventListener("click", e => { if (e.target === modal) close(); });
+
+    send.addEventListener("click", async () => {
+        const productRows = Object.entries(state.products)
+            .filter(([, v]) => v.rating > 0)
+            .map(([id, v]) => ({ product_id: /^\d+$/.test(id) ? Number(id) : id, customer_name: customerName || "عميل", rating: v.rating, comment: v.comment || "", approved: false }));
+        if (!state.site.rating && !productRows.length) {
+            status.textContent = "اختاري عدد النجوم أولاً أو اضغطي «لاحقًا».";
+            status.classList.add("show");
+            return;
+        }
+        send.disabled = true;
+        send.textContent = "جاري الإرسال...";
+        const errors = [];
+        if (productRows.length) {
+            const r = await supabaseClient.from("reviews").insert(productRows);
+            if (r.error) errors.push(r.error.message);
+        }
+        if (state.site.rating) {
+            const r = await supabaseClient.from("site_reviews").insert({ customer_name: customerName || "عميل", rating: state.site.rating, comment: state.site.comment || "", order_id: orderId || null, approved: false });
+            if (r.error) errors.push(r.error.message);
+        }
+        if (errors.length) {
+            console.error("Post-order review error:", errors);
+            status.textContent = `تعذر إرسال بعض التقييمات: ${errors[0]}`;
+            status.classList.add("show");
+            send.disabled = false;
+            send.textContent = "إعادة المحاولة";
+            return;
+        }
+        close();
+        showToast("شكرًا على تقييمك ❤️ هيظهر بعد المراجعة");
+    });
+}

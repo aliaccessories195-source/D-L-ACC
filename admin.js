@@ -229,13 +229,13 @@ function resetProductForm() {
 
 async function addProduct() {
     const title = $("title").value.trim();
-    const productCode = normalizeProductCode($("productCode").value);
+    let productCode = normalizeProductCode($("productCode").value);
     const price = Number($("price").value);
     const category = $("category").value;
     const stock = Math.max(0, Math.floor(Number($("stock")?.value || 0)));
     const file = $("imageFile").files[0];
 
-    if (!title || !productCode || !category || !file || !Number.isFinite(price) || price < 0) {
+    if (!title || !category || !file || !Number.isFinite(price) || price < 0) {
         status($("addStatus"), "اكمل البيانات واختر صورة صحيحة.", "err");
         return;
     }
@@ -249,13 +249,18 @@ async function addProduct() {
     status($("addStatus"), "جاري التحقق من كود المنتج ورفع الصورة...", "ok");
 
     try {
-        if (await productCodeExists(productCode)) {
+        if (!productCode) {
+            productCode = await generateUniqueProductCode();
+            $("productCode").value = productCode;
+        } else if (await productCodeExists(productCode)) {
             status($("addStatus"), "كود المنتج مستخدم بالفعل. اختر كودًا آخر.", "err");
             $("productCode").focus();
+            $("addBtn").disabled = false;
             return;
         }
     } catch (codeError) {
-        status($("addStatus"), `تعذر التحقق من كود المنتج: ${codeError.message || codeError}`, "err");
+        status($("addStatus"), `تعذر التحقق من كود المنتج (شغّل ملف SUPABASE_PRODUCT_CODES.sql): ${codeError.message || codeError}`, "err");
+        $("addBtn").disabled = false;
         return;
     }
 
@@ -345,6 +350,7 @@ async function loadProducts() {
         let result = await supabaseClient.from("products").select("id,title,product_code,price,category,image,discount_enabled,discount_type,discount_value").order("id", { ascending: false });
         if (result.error) result = await supabaseClient.from("products").select("id,title,product_code,price,category,image").order("id", { ascending: false });
         if (result.error) throw result.error;
+        if ((result.data || []).some(p => !p.product_code)) console.warn("بعض المنتجات بدون كود - شغّل SUPABASE_PRODUCT_CODES.sql");
         const data = (result.data || []).map(p => ({...p, discount_enabled:Boolean(p.discount_enabled), discount_type:p.discount_type||"percent", discount_value:Number(p.discount_value||0)}));
 
         if (!data || data.length === 0) {
@@ -878,7 +884,7 @@ function v11OfferActive(p){ const now=Date.now(); return Boolean(p.offer_enabled
 async function loadProductsV11(){
   const list=$("productsList"); if(!list) return;
   try{
-    let q=await supabaseClient.from("products").select("id,title,price,category,image,stock,discount_enabled,discount_type,discount_value,offer_enabled,offer_name,offer_type,offer_value,offer_starts_at,offer_ends_at").order("id",{ascending:false});
+    let q=await supabaseClient.from("products").select("id,title,product_code,price,category,image,stock,discount_enabled,discount_type,discount_value,offer_enabled,offer_name,offer_type,offer_value,offer_starts_at,offer_ends_at").order("id",{ascending:false});
     if(q.error){ q=await supabaseClient.from("products").select("id,title,product_code,price,category,image,discount_enabled,discount_type,discount_value").order("id",{ascending:false}); }
     if(q.error) throw q.error;
     adminProductsCache=(q.data||[]).map(p=>({...p,stock:Number(p.stock||0),discount_enabled:Boolean(p.discount_enabled),discount_type:p.discount_type||"percent",discount_value:Number(p.discount_value||0),offer_enabled:Boolean(p.offer_enabled),offer_type:p.offer_type||"percent",offer_value:Number(p.offer_value||0)}));
@@ -910,8 +916,8 @@ async function loadCoupons(){const root=$("couponsList");if(!root)return;try{con
 async function saveCoupon(){const code=$("couponCode").value.trim().toUpperCase().replace(/\s+/g,"");const percent=Number($("couponPercent").value),min=Number($("couponMin").value||0),limit=Math.max(0,Math.floor(Number($("couponLimit").value||0))),expires=$("couponExpires").value?new Date($("couponExpires").value).toISOString():null;if(!/^[A-Z0-9_-]{3,30}$/.test(code)||percent<=0||percent>100||min<0){status($("couponStatus"),"راجعي الكود ونسبة الخصم والحد الأدنى.","err");return}try{const {error}=await supabaseClient.from("coupons").insert({code,discount_percent:percent,min_order:min,usage_limit:limit,expires_at:expires,active:true});if(error)throw error;status($("couponStatus"),`تم حفظ الكود ${code} 🎟️`,"ok");clearCouponForm();loadCoupons();refreshV11Dashboard();}catch(e){status($("couponStatus"),`فشل حفظ الكود: ${e.message||e}`,"err")}}
 function clearCouponForm(){["couponCode","couponPercent","couponMin","couponLimit","couponExpires"].forEach(id=>{if($(id))$(id).value=""})}$("saveCouponBtn")?.addEventListener("click",saveCoupon);$("clearCouponBtn")?.addEventListener("click",clearCouponForm);
 
-async function loadReviews(){const root=$("reviewsList");if(!root)return;try{const {data,error}=await supabaseClient.from("reviews").select("id,product_id,customer_name,rating,comment,approved,created_at,products(title)").order("created_at",{ascending:false});if(error)throw error;v11Reviews=data||[];renderReviews();}catch(e){status($("reviewsStatus"),`فشل تحميل التقييمات: ${e.message||e}`,"err")}}
-function renderReviews(){const root=$("reviewsList");if(!root)return;root.textContent="";const f=$("reviewFilter")?.value||"pending";const rows=v11Reviews.filter(r=>f==="all"||(f==="approved"?r.approved:!r.approved));if(!rows.length){root.innerHTML='<div class="muted-v11">لا توجد تقييمات في هذا القسم.</div>';return}rows.forEach(r=>{const row=document.createElement("div");row.className="review-row";const stars="★".repeat(r.rating)+"☆".repeat(5-r.rating);row.innerHTML=`<div><b>${r.customer_name}</b><div class="muted-v11">${r.products?.title||"منتج"} • ${v11Date(r.created_at)}</div><div class="review-stars">${stars}</div><div class="review-comment">${r.comment}</div></div>`;const acts=document.createElement("div");acts.className="review-actions";if(!r.approved){const ap=document.createElement("button");ap.type="button";ap.textContent="نشر";ap.addEventListener("click",async()=>{await supabaseClient.from("reviews").update({approved:true}).eq("id",r.id);loadReviews();refreshV11Dashboard();});acts.appendChild(ap)}const del=document.createElement("button");del.type="button";del.className="danger";del.textContent="حذف";del.addEventListener("click",async()=>{if(confirm("حذف التقييم؟")){await supabaseClient.from("reviews").delete().eq("id",r.id);loadReviews();refreshV11Dashboard();}});acts.appendChild(del);row.append(acts);root.appendChild(row)});}
+async function loadReviews(){const root=$("reviewsList");if(!root)return;try{const {data,error}=await supabaseClient.from("reviews").select("id,product_id,customer_name,rating,comment,approved,created_at,products(title)").order("created_at",{ascending:false});if(error)throw error;v11Reviews=data||[];try{const sr=await supabaseClient.from("site_reviews").select("*").order("created_at",{ascending:false});if(!sr.error)v11Reviews=v11Reviews.concat((sr.data||[]).map(x=>({...x,_site:true,products:{title:"⭐ تقييم الموقع"}})));}catch(_){}renderReviews();}catch(e){status($("reviewsStatus"),`فشل تحميل التقييمات: ${e.message||e}`,"err")}}
+function renderReviews(){const root=$("reviewsList");if(!root)return;root.textContent="";const f=$("reviewFilter")?.value||"pending";const rows=v11Reviews.filter(r=>f==="all"||(f==="approved"?r.approved:!r.approved));if(!rows.length){root.innerHTML='<div class="muted-v11">لا توجد تقييمات في هذا القسم.</div>';return}rows.forEach(r=>{const row=document.createElement("div");row.className="review-row";const stars="★".repeat(r.rating)+"☆".repeat(5-r.rating);row.innerHTML=`<div><b>${r.customer_name}</b><div class="muted-v11">${r.products?.title||"منتج"} • ${v11Date(r.created_at)}</div><div class="review-stars">${stars}</div><div class="review-comment">${r.comment}</div></div>`;const acts=document.createElement("div");acts.className="review-actions";if(!r.approved){const ap=document.createElement("button");ap.type="button";ap.textContent="نشر";ap.addEventListener("click",async()=>{await supabaseClient.from(r._site?"site_reviews":"reviews").update({approved:true}).eq("id",r.id);loadReviews();refreshV11Dashboard();});acts.appendChild(ap)}const del=document.createElement("button");del.type="button";del.className="danger";del.textContent="حذف";del.addEventListener("click",async()=>{if(confirm("حذف التقييم؟")){await supabaseClient.from(r._site?"site_reviews":"reviews").delete().eq("id",r.id);loadReviews();refreshV11Dashboard();}});acts.appendChild(del);row.append(acts);root.appendChild(row)});}
 $("reviewFilter")?.addEventListener("change",renderReviews);$("refreshReviewsBtn")?.addEventListener("click",loadReviews);
 
 async function resetAdminData(){

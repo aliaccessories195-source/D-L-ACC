@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dl-acc-v12-static-v1';
+const CACHE_NAME = 'dl-acc-v14-reviews';
 const STATIC_ASSETS = [
   './', './index.html', './favorites.html', './admin.html',
   './style.css', './script.js', './admin.js',
@@ -28,6 +28,13 @@ self.addEventListener('fetch', event => {
       caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
       return response;
     }).catch(() => caches.match(request).then(cached => cached || caches.match('./index.html'))));
+    return;
+  }
+  if (/\.(js|css|html)$/.test(url.pathname)) {
+    event.respondWith(fetch(request).then(response => {
+      if (response.ok && url.origin === location.origin) { const copy = response.clone(); caches.open(CACHE_NAME).then(c => c.put(request, copy)); }
+      return response;
+    }).catch(() => caches.match(request)));
     return;
   }
   event.respondWith(caches.match(request).then(cached => {
