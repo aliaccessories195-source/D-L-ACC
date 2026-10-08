@@ -6,7 +6,7 @@
     --surface:#fffdf9;
     --surface-2:#f0e8dc;
     --text:#201a16;
-    --muted:#786d63;
+    --muted:#665b51;
     --gold:#c89b5b;
     --gold-2:#e2bd7d;
     --gold-dark:#8f6734;
@@ -39,7 +39,7 @@ body{
       radial-gradient(circle at 92% 75%,rgba(226,189,125,.10),transparent 25%),
       var(--bg);
     color:var(--text);
-    font-family:'Cairo','Tajawal',sans-serif;
+    font-family:'Cairo',sans-serif;
     overflow-x:hidden;
 }
 body::before{
@@ -589,3 +589,14 @@ img { max-width: 100%; height: auto; }
 .post-review-actions{display:flex;gap:10px;margin-top:12px}
 .post-review-send{flex:1;border:0;border-radius:14px;padding:13px;font-weight:900;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,#b4874a,#e0bd84);color:#21180f}
 .post-review-skip{border:1px solid var(--line);background:transparent;color:var(--text);border-radius:14px;padding:13px 18px;font-family:inherit;cursor:pointer}
+
+
+/* ===== وضع خفيف: بدون إيفيكتات (أنيميشن/بلور/ظلال/توهج) ===== */
+*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important}
+*:not(.product-img):not(.cart-item-img):not(img){filter:none!important}
+*,*::before,*::after{box-shadow:none!important}
+body{background:var(--bg)!important}
+body::before,body::after,.floating-orb,.orb-one,.orb-two,.details-shimmer,.hero-section::before,.hero-section::after{display:none!important}
+.product-card:hover,.mini-product-card:hover,.add-to-cart-btn:hover,.floating-store-btn:hover,.card-review-btn:hover{transform:none!important}
+.product-image-wrapper::after{display:none!important}
+.quick-view,.product-details,.checkout-modal,.developer-overlay,.post-review-modal{background:rgba(0,0,0,.7)!important}

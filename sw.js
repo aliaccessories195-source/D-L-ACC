@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dl-acc-v14-reviews';
+const CACHE_NAME = 'dl-acc-v17-lite';
 const STATIC_ASSETS = [
   './', './index.html', './favorites.html', './admin.html',
   './style.css', './script.js', './admin.js',

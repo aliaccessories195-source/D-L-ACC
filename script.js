@@ -10,6 +10,8 @@ const THEME_STORAGE_KEY = "theme";
 const FAVORITES_STORAGE_KEY = "dl_acc_favorites_v1";
 const RECENT_STORAGE_KEY = "dl_acc_recent_v1";
 const FREE_SHIPPING_THRESHOLD = 1000;
+const SHIPPING_FEE = 60;
+function getShippingFee(subtotal) { return Number(subtotal) >= FREE_SHIPPING_THRESHOLD || Number(subtotal) <= 0 ? 0 : SHIPPING_FEE; }
 let currentCategory = "الكل";
 let recentIds = [];
 let favorites = new Set();
@@ -327,8 +329,7 @@ async function fetchProducts() {
 
 function createProductCard(product, index) {
     const card = document.createElement("div");
-    card.className = "product-card animate__animated animate__fadeInUp";
-    card.style.animationDelay = `${index * 0.05}s`;
+    card.className = "product-card";
     card.addEventListener("click", (event) => {
         if (!event.target.closest("button")) openQuickView(product);
     });
@@ -626,7 +627,7 @@ function updateCartUI() {
         totalCost += item.price * item.quantity;
 
         const row = document.createElement("div");
-        row.className = "cart-item animate__animated animate__fadeIn";
+        row.className = "cart-item";
 
         const thumb = document.createElement("img");
         thumb.className = "cart-item-img";
@@ -712,12 +713,18 @@ function renderCheckoutSummary() {
     });
     const subtotal=getCartTotal();
     if(activeCoupon){ const discountRow=document.createElement("div");discountRow.className="checkout-summary-row";discountRow.innerHTML='<span>خصم الكوبون</span><strong></strong>';discountRow.querySelector("strong").textContent=`- ${formatPrice(activeCoupon.discount)}`;root.appendChild(discountRow);}
+    const shipFee = getShippingFee(subtotal);
+    const shipRow = document.createElement("div");
+    shipRow.className = "checkout-summary-row";
+    shipRow.innerHTML = "<span>الشحن</span><strong></strong>";
+    shipRow.querySelector("strong").textContent = shipFee ? formatPrice(shipFee) : "مجاني 🎁";
+    root.appendChild(shipRow);
     const total = document.createElement("div");
     total.className = "checkout-summary-total";
     const label = document.createElement("span");
-    label.textContent = "الإجمالي";
+    label.textContent = "الإجمالي النهائي";
     const value = document.createElement("span");
-    value.textContent = formatPrice(Math.max(0,subtotal-(activeCoupon?.discount||0)));
+    value.textContent = formatPrice(Math.max(0,subtotal-(activeCoupon?.discount||0)+shipFee));
     total.append(label, value);
     root.appendChild(total);
 }
@@ -803,7 +810,8 @@ async function submitCheckout(event) {
     localStorage.setItem("dl_acc_checkout_v1", JSON.stringify({name, phone, address}));
     const subtotal = getCartTotal();
     const couponDiscount = Number(activeCoupon?.discount || 0);
-    const total = Math.max(0, subtotal - couponDiscount);
+    const shippingFee = getShippingFee(subtotal);
+    const total = Math.max(0, subtotal - couponDiscount + shippingFee);
     const orderItems = cart.map(item => ({id: item.id, name: item.name, price: item.price, quantity: item.quantity}));
     const submitBtn = event.submitter || document.querySelector(".checkout-submit");
     if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري تجهيز الطلب...'; }
@@ -858,12 +866,13 @@ async function submitCheckout(event) {
     const itemsText = orderItems.map((item, index) =>
         `${index + 1}. ${item.name}\nالكمية: ${item.quantity} | الإجمالي: ${item.price * item.quantity} ج.م`
     ).join("\n");
+    const shippingText = shippingFee ? `🚚 الشحن: ${shippingFee} ج.م` : "🚚 الشحن: مجاني";
     const couponText = couponDiscount ? `🎟️ الكوبون: ${activeCoupon.code} (-${couponDiscount} ج.م)` : "";
     const message = buildWhatsappOrderMessage({
         name, phone, address, total,
         items: itemsText,
         order_id: savedOrderId,
-        coupon: couponText
+        coupon: [couponText, shippingText].filter(Boolean).join("\n")
     });
 
     const whatsappURL = `https://api.whatsapp.com/send?phone=${MY_WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
@@ -1034,7 +1043,7 @@ function openQuickView(product, scrollToReview = false) {
     loadReviewsForProduct(product.id).then(rows => {
         qvReviews.textContent = "";
         renderProductReviews(qvReviews, rows, product.id);
-        if (scrollToReview) setTimeout(() => qvReviews.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+        if (scrollToReview) setTimeout(() => qvReviews.scrollIntoView({ behavior: "auto", block: "start" }), 120);
     });
     modal.classList.add("open");
     modal.setAttribute("aria-hidden", "false");
@@ -1074,13 +1083,6 @@ function initLuxeInteractions() {
         backTop?.classList.toggle("show", window.scrollY > 550);
     }, { passive: true });
 
-    if (window.matchMedia && window.matchMedia("(pointer:fine)").matches) {
-        document.body.classList.add("has-pointer-glow");
-        window.addEventListener("pointermove", (event) => {
-            document.documentElement.style.setProperty("--mx", `${event.clientX}px`);
-            document.documentElement.style.setProperty("--my", `${event.clientY}px`);
-        }, { passive: true });
-    }
 }
 
 
@@ -1102,8 +1104,7 @@ function renderFeaturedProducts() {
     }
     picks.forEach((product, index) => {
         const card = document.createElement("article");
-        card.className = "mini-product-card animate__animated animate__fadeInUp";
-        card.style.animationDelay = `${index * 0.08}s`;
+        card.className = "mini-product-card";
         const imgWrap = document.createElement("div");
         imgWrap.className = "mini-product-image";
         const img = document.createElement("img");
@@ -1247,7 +1248,7 @@ const originalFilterCategory = filterCategory;
 filterCategory = function(categoryName, button) {
     originalFilterCategory(categoryName, button);
     if (categoryName !== "الكل") {
-        document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.getElementById("products")?.scrollIntoView({ behavior: "auto", block: "start" });
     }
 };
 
